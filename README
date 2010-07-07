@@ -1,0 +1,16 @@
+Usted es la persona encargada de resolver el tráfico de la ciudad, y su oficina no cuenta con el presupuesto
+necesario para la construcción de nuevas vías de comunicación. Sin embargo, usted tiene la posibilidad de
+cambiar la orientación de las vías para mejorar la circulación dentro de la ciudad.
+
+En la ciudad, las vías conforman una grilla ortogonal donde las calles corresponden a las vías horizontales
+y las avenidas a las vías verticales. Su misión es asignarle a todas las vías una dirección de circulación unica
+(este u oeste para las calles, y norte o sur para las avenidas) siempre y cuando garantice una conexión
+eficiente entre ciertos pares de lugares importantes seleccionados.
+
+Una conexión ente los lugares A y B de la ciudad es eficiente si y sólo si para ir de A a B se tiene que
+realizar a lo sumo un cruce. Estos pares de lugares seleccionados representan centros neurálgicos de la ciudad
+que deben estar conectados de manera expedita.
+
+Su tarea consiste en escribir un programa que determine si es posible fijar las direcciones de las calles
+y avenidas en la ciudad, de forma tal que ciertos pares de lugares seleccionados esten conectados de forma
+eficiente.
