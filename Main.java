@@ -6,14 +6,95 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Iterator;
 
+
+
 /**
  * Clase Principal encargada de resolver el problema de vialidad eficiente
  * planteado en el proyecto 4 de la cátedra del Laboratorio de Algoritmos y
  * Estructuras III, de la Universidad Simón Bolívar.
+ *
+ * MODELO DE REPRESENTACIÓN:
+ *
+ * Representamos con la siguiente estructura de datos tanto la instancia
+ * del caso de prueba en evaluación, como los datos que utilizamos para la reso-
+ * lución del problema para esa instancia. Dado que el archivo de entrada puede
+ * contener muchas instancias del problema, decidimos almacenar sólo una instan-
+ * cia a la vez, para evitar sobrecargas de memoria. En cuanto al problema, lo
+ * resolvemos de la manera sugerida por la cátedra: Construyendo cláusulas que
+ * representen las condiciones necesarias para que el problema se solucione,
+ * luego transformamos esas cláusulas en fórmulas lógicas en la forma 2CNF, en
+ * base a éstas construimos un grafo de implicaciones y hallamos las componentes
+ * fuertemente conexas de dicho grafo. El problema tiene solución en caso de que
+ * no exista ningun "literal" de las fórmulas junto con su complemento (negado)
+ * en una misma componente fuertemente conexa. De lo contrario, el problema no
+ * tendrá solución.
+ *
+ * Para representar los literales hemos usado el conjunto de los números natura-
+ * les; usando los números impares para representar las calles y los pares para
+ * representar las avenidas, salvo en el caso excepcional.
+ * 
+ * Dado que en la manera en que nuestro Digraph representa sus nodos (usando los
+ * números naturales comenzando en el cero), no podemos usar números negativos
+ * para representar los complementos (negados) de nuestros literales. Para re-
+ * solver éste problema, hemos creado un "cero" simbólico que usamos para calcu-
+ * lar el número que representará el literal de cierta calle 'x' (o avenida 'y')
+ * según un desplazamiento de 'x' números impares (o 'y' números impares) hacia
+ * la derecha ("positivos") o a la izquierda ("negativos") de nuestro "cero".
+ *
+ * Considerando esta definición de positivo y negativo, los literales correspon-
+ * dientes a las calles, sin negación, los representamos con números positivos y
+ * corresponden a la orientación W-E; sus complementos corresponden a la orien-
+ * tacion E-W. Análogamente, los literales correspondientes a las avenidas, sin
+ * negación, los representamos con números positivos y corresponden a la orien-
+ * tación N-S; sus complementos corresponden a la orientación S-N.
+ *
+ *
+ * Caso excepcional:
+ *
+ * Es fácil ver que en caso de que la suma del número de calles mas el número de
+ * avenidas sea impar, esta representación será ineficiente, dado que nuestro
+ * "cero" sería un número impar, resultando en que se dejaría de utilizar algu-
+ * nos números, y probablemente se tomen valores negativos, que es justamente lo
+ * que queríamos evitar. Para solucionar esto hay varias opciones: Se puede in-
+ * crementar el "cero" en uno, con lo cual se evita la utilización de números
+ * negativos pero no se evita tener nodos inútiles. La otra opción, la cuál es-
+ * cogimos por solucionar ambos problemas, es que, en caso de que se produzca un
+ * caso excepcional (que el cero sea impar), usaremos los 
+ *
+ *
+ * Ejemplo:
+ *
+ * Sea una instancia de caso de prueba en la que se tenga una grilla de 6 calles
+ * y 7 avenidas y se quieren construir las cláusulas para ir del punto (2,2) al
+ * (4,5). Primero calculamos el "cero simbólico" que tendría el valor de:
+ *
+ * cero == nCalles + nAvenidas == 6 + 7 == 13
+ *
+ * Luego, los puntos serán representados de la siguiente manera:
+ *
+ * (2,2) == (,)
+ *
+ * (4,5) == (,)
+ *
+ * Los respectivos complementos serán representados de la siguiente forma:
+ *
+ * 2* ==
+ *
+ * 4* ==
+ *
+ * 5* ==
+ *
+ * Donde i* es el complemento de i
  * @author Victor De Ponte, 05-38087
  * @author Karina Valera, 06-40414
  */
 public class Main {
+
+    /**
+     
+     */
+
+
 
     private String          inputFile;  // Nombre del archivo de entrada.
 
@@ -187,18 +268,51 @@ public class Main {
     /**
      *
      */
-    public void construirFormulas() {
+    public void construirClausulas() {
         Iterator iterador = this.viajes.iterator();
         while (iterador.hasNext()) {
             int[] par = (int[])iterador.next();
-            int[] propos = construirFormula(par);
+            int[] propos = construirClausula(par);
             this.formulas.add(propos);
         }
     }
 
-    private static int[] construirFormula(int[] pair) {
+    private static int[] construirClausula(int[] pair) {
         int[] formula = new int[4];
+        int a = pair[0];
+        int b = pair[1];
+        int c = pair[2];
+        int d = pair[3];
 
+
+
+        // Esto quiere decir que estamos yendo del punto (a,b) al punto (c,d)
+
+        if (a < c) {
+            if (b < d) {
+
+            } else if (b == d) {
+
+            } else {
+
+            }
+        } else if (a == c) {
+            if (b < d) {
+
+            } else if (b == d) {
+
+            } else {
+
+            }
+        } else {
+            if (b < d) {
+
+            } else if (b == d) {
+
+            } else {
+
+            }
+        }
         return formula;
     }
 
