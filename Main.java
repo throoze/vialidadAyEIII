@@ -30,138 +30,159 @@ import java.util.Iterator;
  * tendrá solución.
  *
  * Para representar los literales hemos usado el conjunto de los números natura-
- * les; usando los números impares para representar las calles y los pares para
- * representar las avenidas, salvo en el caso excepcional.
+ * les; usando los números pares para representar los literales sin negación, y
+ * los impares para representar los literales negados
  * 
  * Dado que en la manera en que nuestro Digraph representa sus nodos (usando los
  * números naturales comenzando en el cero), no podemos usar números negativos
- * para representar los complementos (negados) de nuestros literales. Para re-
- * solver éste problema, hemos creado un "cero" simbólico que usamos para calcu-
- * lar el número que representará el literal de cierta calle 'x' (o avenida 'y')
- * según un desplazamiento de 'x' números impares (o 'y' números impares) hacia
- * la derecha ("positivos") o a la izquierda ("negativos") de nuestro "cero".
+ * para representar los complementos (negados) de nuestros literales.
+ * 
+ * Para resolver éste problema, al representar una instancia del problema con
+ * 'c' calles y 'a' avenidas, usamos los primeros c enteros pares (empezando por
+ * el cero) para representar los literales sin negacion de las calles, los pri-
+ * meros c enteros impares para representar los literales negados de las calles,
+ * los siguientes a enteros pares para representar los literales sin negación de
+ * las avenidas y los a enteros impares (después de los de las calles) para re-
+ * presentar los literales negados de las avenidas.
  *
- * Considerando esta definición de positivo y negativo, los literales correspon-
- * dientes a las calles, sin negación, los representamos con números positivos y
- * corresponden a la orientación W-E; sus complementos corresponden a la orien-
- * tacion E-W. Análogamente, los literales correspondientes a las avenidas, sin
- * negación, los representamos con números positivos y corresponden a la orien-
- * tación N-S; sus complementos corresponden a la orientación S-N.
+ * Los literales correspondientes a las calles, sin negación, corresponden a la
+ * orientación W-E; sus complementos corresponden a la orientacion E-W. Análoga-
+ * mente, los literales correspondientes a las avenidas, sin negación, corres-
+ * ponden a la orientación N-S, y sus complementos corresponden a la orientación
+ * S-N, con:
+ * 
+ *                              N
  *
+ *                              |
+ *                              |
+ *                      W ------|------ E
+ *                              |
+ *                              |
  *
- * Caso excepcional:
- *
- * Es fácil ver que en caso de que la suma del número de calles mas el número de
- * avenidas sea impar, esta representación será ineficiente, dado que nuestro
- * "cero" sería un número impar, resultando en que se dejaría de utilizar algu-
- * nos números, y probablemente se tomen valores negativos, que es justamente lo
- * que queríamos evitar. Para solucionar esto hay varias opciones: Se puede in-
- * crementar el "cero" en uno, con lo cual se evita la utilización de números
- * negativos pero no se evita tener nodos inútiles. La otra opción, la cuál es-
- * cogimos por solucionar ambos problemas, es que, en caso de que se produzca un
- * caso excepcional (que el cero sea impar), usaremos los 
- *
+ *                              S
  *
  * Ejemplo:
  *
  * Sea una instancia de caso de prueba en la que se tenga una grilla de 6 calles
  * y 7 avenidas y se quieren construir las cláusulas para ir del punto (2,2) al
- * (4,5). Primero calculamos el "cero simbólico" que tendría el valor de:
+ * (4,5).
  *
- * cero == nCalles + nAvenidas == 6 + 7 == 13
+ * Luego, los literales de la orientación de las calles y avenidas serán repre-
+ * sentados de la siguiente manera:
  *
- * Luego, los puntos serán representados de la siguiente manera:
+ * 2da Calle con orientación W-E: 2
+ * 4ta Calle con orientación W-E: 6
  *
- * (2,2) == (,)
- *
- * (4,5) == (,)
+ * 2da Avenida con orientación N-S: 14
+ * 5ta Avenida con orientación N-S: 20
  *
  * Los respectivos complementos serán representados de la siguiente forma:
  *
- * 2* ==
+ * 2da Calle con orientación E-W: 3
+ * 4ta Calle con orientación E-W: 7
  *
- * 4* ==
+ * 2da Avenida con orientación S-N: 15
+ * 5ta Avenida con orientación S-N: 21
+ * 
+ * Luego, las cláusulas se almacenarán en arreglos de enteros correspondientes a
+ * la representación de los literales usados:
+ * 
+ * la primera cláusula correspondiente al viaje entre estos dos puntos se alma-
+ * nará en un arreglo de tamaño 4, como sigue:
+ * 
+ * clausula[0] == 2
+ * clausula[1] == 21
+ * clausula[2] == 15
+ * clausula[3] == 6
+ * 
+ * Y esto representa la cláusula:
+ * 
+ *      ( c2 /\ !a5 ) \/ ( !a2 /\ c4 )
+ * 
+ * donde los operadores son:
+ * 
+ *  /\ : conjunción lógica
+ * 
+ *  \/ : disjunción lógica
+ * 
+ *  !  : negación lógica
  *
- * 5* ==
- *
- * Donde i* es el complemento de i
  * @author Victor De Ponte, 05-38087
  * @author Karina Valera, 06-40414
  */
 public class Main {
 
-    /**
-     
-     */
-
-
-
-    private String          inputFile;  // Nombre del archivo de entrada.
-
-    private String          outputFile; // Nombre del archivo de salida.
-
-    private BufferedReader  in;         // Buffer de entrada (Lectura)
-    private PrintStream     out;        // Flujo de salida (Escritura)
-
-    private int             nInstances; // Numero de instancias del problema a
-                                        // resolver.
-
-    private int             c;          // Numero de calles del caso en uso
-
-    private int             a;          // Numero de avenidas del caso en uso
-
-    private int             p;          // Numero de pares de lugares del caso
-                                        // en uso.
-
-    private List<int[]>     viajes;     // Lista de pares de puntos entre los
-                                        // cuales se debe verificar si se puede
-                                        // viajar de manera eficiente.
-
-    private String          salida;     // Almacena la salida del programa
-
-    private List<int[]>     formulas;   // Cláusulas iniciales que modelan el
-                                        // problema.
-
-    private List<int[]>     dosCNF;     // Cláusulas que modelan el problema en
-                                        // la forma 2CNF.
-
-    private int             cero;       // Cero simbólico para poder representar
-                                        // los complementos de las cláusulas.
-
 
     /**
-     *
-     * @param nCalle
-     * @return
+     * Nombre del archivo de entrada.
      */
-    public int calle(int nCalle) {
-        int absNCalle = (0 <= nCalle ? nCalle : (nCalle*(-1)) );
-        int offset = ((absNCalle * 2) - 1);
-        int calle = 0;
-        if (0 <= nCalle) {
-            calle = this.cero + offset;
-        } else {
-            calle = this.cero - offset;
-        }
-        return calle;
-    }
+    private String          inputFile; 
 
     /**
-     *
-     * @param nAvenida
-     * @return
+     * Nombre del archivo de salida.
      */
-    public int avenida(int nAvenida) {
-        int absNAvenida = (0 <= nAvenida ? nAvenida : (nAvenida*(-1)));
-        int offset = (absNAvenida * 2);
-        int avenida = 0;
-        if (0 <= nAvenida) {
-            avenida = this.cero + offset;
-        } else {
-            avenida = this.cero - offset;
-        }
-        return avenida;
-    }
+    private String          outputFile;
+
+    /**
+     * Buffer de entrada (Lectura).
+     */
+    private BufferedReader  in;
+
+    /**
+     * Flujo de salida (Escritura).
+     */
+    private PrintStream     out;
+
+    /**
+     * Numero de instancias del problema a resolver.
+     */
+    private int             nInstances;
+
+    /**
+     * Numero de calles del caso en uso.
+     */
+    private int             c;
+
+    /**
+     * Numero de avenidas del caso en uso.
+     */
+    private int             a;
+
+    /**
+     * Numero de pares de lugares del caso en uso.
+     */
+    private int             p;
+
+    /**
+     * Número en el que termina la representación de las calles y comienza la de
+     * las avenidas
+     */
+    private int             offset;
+
+    /**
+     * Lista de pares de puntos entre los cuales se debe verificar si se puede
+     * viajar de manera eficiente.
+     */
+    private List<int[]>     viajes;
+
+    /**
+     * Cláusulas iniciales que modelan el problema.
+     */
+    private List<int[]>     formulas;
+
+    /**
+     * Cláusulas que modelan el problema en la forma 2CNF.
+     */
+    private List<int[]>     dosCNF;
+
+    /**
+     * Almacena la salida del programa
+     */
+    private String          salida;
+
+
+
+    // CONSTRUCTOR:
 
     /**
      *
@@ -203,6 +224,32 @@ public class Main {
         }
     }
 
+
+    // MÉTODOS:
+
+    /**
+     *
+     * @param nCalle
+     * @return
+     */
+    public int calle(int nCalle) {
+        int absNCalle = (0 <= nCalle ? nCalle - 1 : (nCalle * (-1)) );
+        int calle = ( (absNCalle * 2) - ( nCalle < 0 ? 1 : 0 ) );
+        return calle;
+    }
+
+    /**
+     *
+     * @param nAvenida
+     * @return
+     */
+    public int avenida(int nAvenida) {
+        int absNAvenida = (0 <= nAvenida ? nAvenida - 1 : (nAvenida * (-1)));
+        int avenida = ((absNAvenida * 2) - ( nAvenida < 0 ? 1 : 0));
+        avenida = avenida + this.offset;
+        return avenida;
+    }
+
     /**
      *
      * @param caso
@@ -231,7 +278,10 @@ public class Main {
                         "3 enteros y se encontró:\n\n\t\t" + linea );
             }
 
-            this.cero = this.a + this.c;
+            /* Se calcula el desplazamiento: número en el que comienza la repre-
+             * sentación de las avenidas
+             */
+            this.offset = 2 * this.c;
 
             // Se almacenan los pares de lugares a visitar
             for (int i = 0; i < this.p; i++) {
