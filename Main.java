@@ -788,7 +788,6 @@ public class Main {
         }
     }
 
-    // BORRAR LAS COSAS COMENTADAS
     /**
      * Transforma las clausulas calculadas a la forma 2CNF
      * pre: true
@@ -827,45 +826,7 @@ public class Main {
             this.dosCNF.add(disj4);
         }
 
-        int[][] claus = new int[this.clausulas.size()][];
-            Iterator auxIter = this.clausulas.iterator();
-            for (int i = 0; i < claus.length; i++) {
-                int[] arr = (int[])auxIter.next();
-                claus[i] = arr;
-            }
-
-        System.out.println("Clausulas originales:\n");
-        for (int i = 0; i < claus.length; i++) {
-            System.out.println("Clausula "+i+" = [(" +claus[i][0]+" ^ "+claus[i][1]+") or (" +claus[i][2]+" ^ "+claus[i][3]+")]");
-        }
-
-
-
-        claus = new int[this.dosCNF.size()][];
-        auxIter = this.dosCNF.iterator();
-            for (int i = 0; i < claus.length; i++) {
-                int[] arr = (int[])auxIter.next();
-                claus[i] = arr;
-            }
-
-        System.out.println("\n\nDisjunciones antes de simplificar:\n");
-        for (int i = 0; i < claus.length; i++) {
-            System.out.println("Disjuncion "+i+" = (" +claus[i][0]+" or "+claus[i][1]+")");
-        }
-
         this.simplificar2CNF();
-
-        claus = new int[this.dosCNF.size()][];
-        auxIter = this.dosCNF.iterator();
-        for (int i = 0; i < claus.length; i++) {
-            int[] arr = (int[])auxIter.next();
-            claus[i] = arr;
-        }
-
-        System.out.println("\n\nDisjunciones despues de simplificar:\n");
-        for (int i = 0; i < claus.length; i++) {
-            System.out.println("Disjuncion "+i+" = (" +claus[i][0]+" or "+claus[i][1]+")");
-        }
 
         if (!this.tieneSolucion[0] && this.dosCNF.isEmpty()) {
             this.tieneSolucion[0] = true;
@@ -874,8 +835,11 @@ public class Main {
     }
 
     /**
-     *
-     * @return
+     * Construye el grafo de implicaciones que representa esta instancia del
+     * problema
+     * pre: true
+     * post: en caso de que no se haya conseguido ya la solucion, se construye
+     * un grafo de implicaciones que modela el problema.
      */
     public void construirGrafoDeImplicaciones() {
 
@@ -916,7 +880,10 @@ public class Main {
     }
 
     /**
-     *
+     * calcula las componentes fuertemente conexas usando el algoritmo de Tarjan
+     * pre: true
+     * post: Se calculan las componentes fuertemente conexas del digrafo de esta
+     * instancia del problema
      */
     public void calcularComponentesFuertementeConexas() {
 
@@ -945,9 +912,13 @@ public class Main {
     }
 
     /**
-     *
-     * @param componente
-     * @return
+     * Analiza una componente para ver si consigue literales que den contradic-
+     * cion.
+     * pre: componente debe contener una componente F.C. del grafo del problema
+     * post: se dice si hay contrdiccion en esta componente
+     * @param componente C.F.C. a analizar
+     * @return true si no hay contradiccion en esta componente, false en caso
+     * contrario.
      */
     private boolean analizarComponente(List<Integer> componente) {
         int[] comp = new int[componente.size()];
@@ -975,7 +946,9 @@ public class Main {
     }
 
     /**
-     *
+     * Escribe el resultado de los calculos en el archivo de salida
+     * pre: true;
+     * post: Se calcula el resultado y se imprime en el archivo de salida.
      */
     public void decision() {
         String desicion = "";
@@ -995,7 +968,8 @@ public class Main {
     }
 
     /**
-     * @obj args the command line arguments
+     * Programa trincipal. Controla el flujo del resto de los métodos.
+     * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException{
         Main vialidad = null;
@@ -1022,46 +996,4 @@ public class Main {
         }
 
     }
-
-    /**
-     * Clase privada que sirve para poder simular el paso de parámetros por
-     * referencia en java. Servirá especialmente en la recursión del método para
-     * palcular las componentes fuertemente conexas.
-     * @obj <E> El tipo del objeto a encapsular.
-     */
-    private class Param<E> {
-
-        /**
-         * El parámetro que se está encapsulando
-         */
-        E obj;
-
-        /**
-         * Constructor del encapsulador {@code Param}. Encapsula el elemento
-         * {@code elem}
-         * @param elem Elemento a encapsular
-         */
-        public Param(E elem) {
-            this.obj = elem;
-        }
-
-        /**
-         * Getter de la clase Param. Devuelve el objeto encapsulado por éste
-         * {@code Param}
-         * @return El parámetro encapsulado.
-         */
-        public E getParametro() {
-            return (E)this.obj;
-        }
-
-        /**
-         * Setter del objeto Param. Establece un nuevo valor para el
-         * elemento encapsulado
-         * @param elem El nuevo valor para el objeto encapsulado.
-         */
-        public void setParametro(E elem) {
-            this.obj = (E) elem;
-        }
-    }
-
 }
