@@ -176,6 +176,12 @@ public class Main {
     private List<int[]>         clausulas;
 
     /**
+     * Lista que almacena los literales "solitarios", en los casos en los que se
+     * viaje en la misma calle o avenida.
+     */
+    private Stack<Integer>       literalesSolos;
+
+    /**
      * Cláusulas que modelan el problema en la forma 2CNF.
      */
     private List<int[]>         dosCNF;
@@ -193,20 +199,25 @@ public class Main {
     private int                 nNodos;
 
     /**
-     * Cantidad de variables dummy que serán necesarias para tratar los casos en
-     * los que se viaja sobre la misma calle o la misma avenida
+     * Guarda la lista de las componentes fuertemente conexas halladas
      */
-    private int                 nDummies;
-
     private List<List<Integer>> compsFuertConexas;
+
+    /**
+     * Dice si el caso de prueba tratado tiene solucion o no. La primera posi-
+     * cion indica si se ha confirmado una desicion sobre el resultado del pro-
+     * blema o no, y la segunda posicion indica la desicion en si.
+     */
+    private boolean[]           tieneSolucion;
 
     // CONSTRUCTOR:
 
     /**
-     *
-     * @obj inFile
-     * @obj outFile
-     * @throws IOException
+     * Constructor de la Clase Main. Se encarga de inicializar todos los valores
+     * al inicio del programa.
+     * @obj inFile Archivo de entrada
+     * @obj outFile Archivo de Salida
+     * @throws IOException En caso de que ocurra un error al leer o escribir
      */
     public Main (String inFile, String outFile) throws IOException {
         this.inputFile = inFile;
@@ -220,8 +231,8 @@ public class Main {
             
             // Se inicializan la entrada y la salida del programa
             try {
-                in = new BufferedReader(new FileReader(this.inputFile));
-                out = new PrintStream(this.outputFile);
+                this.in = new BufferedReader(new FileReader(this.inputFile));
+                this.out = new PrintStream(this.outputFile);
             } catch (FileNotFoundException ex) {
                 throw new ExcepcionArchivoNoExiste("Problema al leer el " +
                         "archivo \"" + this.inputFile +"\": EL ARCHIVO NO " +
@@ -241,14 +252,28 @@ public class Main {
             }
             this.nCasosProbados = 0;
         }
+
+        // Se inicializan los contenedores en vacío.
+
+        this.viajes = new Lista();
+        this.clausulas = new Lista();
+        this.dosCNF = new Lista();
+        this.compsFuertConexas = new Lista();
+        this.literalesSolos = new Stack();
+
+        this.tieneSolucion = new boolean[2];
+        this.tieneSolucion[0] = false;
+        this.tieneSolucion[1] = false;
     }
 
     // MÉTODOS ESTÁTICOS:
 
     /**
-     *
-     * @obj clausula
-     * @return
+     * Distribuye las clausulas conseguidas en la primera fase. Requiere que las
+     * clausulas tengan tamaño 4.
+     * @obj clausula La cláusula a distribuir
+     * @return Arreglo que representa la distribucion de los literales de la
+     * clausula
      */
     private static int[][] distributiva(int[] clausula) {
 
@@ -285,10 +310,12 @@ public class Main {
         return disjunciones;
     }
 
+    
+
     // MÉTODOS NO-ESTÁTICOS:
     
     /**
-     * 
+     * Indica si queda algun caso por probar
      * @return
      */
     public boolean hasNext() {
@@ -296,16 +323,25 @@ public class Main {
     }
 
     /**
-     *
-     * @obj ca1
-     * @obj av1
-     * @obj ca2
-     * @obj av2
-     * @return
+     * Construye la clausula en caso de que el viaje sea hacia la derecha del
+     * mapa
+     * pre:  true;
+     * post: Se devuelve la clausula en el caso de ir hacia la izq en el
+     * mapa
+     * @obj ca1 calle del punto 1
+     * @obj av1 avenida del punto 1
+     * @obj ca2 calle del punto 2
+     * @obj av2 avenida del punto 2
+     * @return Clausula  en forma de arreglo de enteros generada para este caso
      */
-    private int[] avenida1Menor(int ca1, int av1, int ca2, int av2) {
+    private int[] haciaLaDerecha(int ca1, int av1, int ca2, int av2) {
 
         int[] clausula = new int[4];
+        int noC1 = ca1;
+        int noA1 = 0;
+        int noC2 = 0;
+        int noA2 = 0;
+
 
         if (ca1 < ca2) {
             // Primer posible camino
@@ -313,18 +349,11 @@ public class Main {
             // Segundo posible camino
             clausula[2]= ca2; clausula[3]= av1;
         } else if (ca1 == ca2) {
-            /* Sólo hay un camino, relleno el resto con el mismo "literal"
-             * ya que: (!p \/ p) <==> (p ==> p) <==> true
-             * Se agrega un nodo dummy al grafo fr implicaciones y se construye
-             * la disjuncion con este nuevo literal dummy
+            /* Sólo hay un camino posible. Almaceno este literal en la lista de
+             * literales solos.
              */
-
-            // Único posible camino
-            clausula[0]= ca1; clausula[1]= this.nNodos + (2*this.nDummies);
-            // Único posible camino
-            clausula[2]= ca2; clausula[3]= this.nNodos + (2*this.nDummies) + 1;
-
-            this.nDummies++;
+            this.literalesSolos.push(new Integer(ca1));
+            return null;
         } else {
             // Primer posible camino
             clausula[0]= ca1; clausula[1]= -av2;
@@ -336,14 +365,18 @@ public class Main {
     }
 
     /**
-     *
-     * @obj ca1
-     * @obj av1
-     * @obj ca2
-     * @obj av2
-     * @return
+     * Construye la clausula en caso de que el viaje sea hacia la izquierda del
+     * mapa.
+     * pre:  true;
+     * post: Se devuelve la clausula en el caso de ir hacia la derecha en el
+     * mapa
+     * @obj ca1 calle del punto 1
+     * @obj av1 avenida del punto 1
+     * @obj ca2 calle del punto 2
+     * @obj av2 avenida del punto 2
+     * @return Clausula  en forma de arreglo de enteros generada para este caso
      */
-    private int[] avenida1Mayor(int ca1, int av1, int ca2, int av2) {
+    private int[] haciaLaIzquierda(int ca1, int av1, int ca2, int av2) {
 
         int[] clausula = new int[4];
 
@@ -353,18 +386,11 @@ public class Main {
             // Segundo posible camino
             clausula[2]= -ca2; clausula[3]= av1;
         } else if (ca1 == ca2) {
-            /* Sólo hay un camino, relleno el resto con el mismo "literal"
-             * ya que: (!p \/ p) <==> (p ==> p) <==> true
-             * Se agrega un nodo dummy al grafo fr implicaciones y se construye
-             * la disjuncion con este nuevo literal dummy
+            /* Sólo hay un camino posible. Almaceno este literal en la lista de
+             * literales solos.
              */
-
-            // Único posible camino
-            clausula[0]= -ca1; clausula[1]= this.nNodos + (2*this.nDummies);
-            // Único posible camino
-            clausula[2]= -ca2; clausula[3]= this.nNodos + (2*this.nDummies) + 1;
-
-            this.nDummies++;
+            this.literalesSolos.push(new Integer(ca1));
+            return null;
         } else {
             // Primer posible camino
             clausula[0]= -ca1; clausula[1]= -av2;
@@ -376,78 +402,71 @@ public class Main {
     }
 
     /**
-     *
-     * @obj ca1
-     * @obj av1
-     * @obj ca2
-     * @obj av2
-     * @return
+     * Construye la clausula en caso de que el viaje sea en la misma avenida
+     * pre:  true;
+     * post: Se devuelve la clausula en el caso de viajar en la misma avenida en
+     * el mapa
+     * @obj ca1 calle del punto 1
+     * @obj av1 avenida del punto 1
+     * @obj ca2 calle del punto 2
+     * @obj av2 avenida del punto 2
+     * @return Clausula  en forma de arreglo de enteros generada para este caso
      */
-    private int[] avenida1Igual(int ca1, int av1, int ca2, int av2) {
+    private int[] mismaAvenida(int ca1, int av1, int ca2, int av2) {
 
-        int[] clausula = new int[4];
-
-        if (ca1 < ca2) {
-            /* Sólo hay un camino, relleno el resto con el mismo "literal"
-             * ya que: (!p \/ p) <==> (p ==> p) <==> true
-             * Se agrega un nodo dummy al grafo fr implicaciones y se construye
-             * la disjuncion con este nuevo literal dummy
+        if (ca1 < ca2) { // hacia abajo
+            /* Sólo hay un camino posible. Almaceno este literal en la lista de
+             * literales solos.
              */
-
-            // Único posible camino
-            clausula[0]= av1; clausula[1]= this.nNodos + (2*this.nDummies);
-            // Único posible camino
-            clausula[2]= av2; clausula[3]= this.nNodos + (2*this.nDummies) + 1;
-
-            this.nDummies++;
-        } else if (ca2 < ca1) {
-            /* Sólo hay un camino, relleno el resto con el mismo "literal"
-             * ya que: (!p \/ p) <==> (p ==> p) <==> true
-             * Se agrega un nodo dummy al grafo fr implicaciones y se construye
-             * la disjuncion con este nuevo literal dummy
+            this.literalesSolos.push(new Integer(new Integer(avenida(av1))));
+        } else if (ca2 < ca1) { // hacia arriba
+            /* Sólo hay un camino posible. Almaceno este literal en la lista de
+             * literales solos.
              */
-
-            // Único posible camino
-            clausula[0]= -av1; clausula[1]= this.nNodos + (2*this.nDummies);
-            // Único posible camino
-            clausula[2]= -av2; clausula[3]= this.nNodos + (2*this.nDummies) + 1;
-
-            this.nDummies++;
+            this.literalesSolos.push(new Integer(new Integer(avenida(-av1))));
         } else {
             /* No se trata el caso cual las calles son iguales, ya que se
              * trataría de el mismo punto y no habría nada que hacer. En este
              * caso, se retorna null.
              */
-            return null;
         }
-
-        return clausula;
+        return null;
     }
 
     /**
-     *
-     * @obj pair
-     * @return
+     * Llama a las funciones que consruiran la clausula
+     * pre: pair.length == 4
+     * post: Se devuelve un arreglo de enteros que representa la clausula corres
+     * pondiente al viaje entre los puntos representados en pair.
+     * @obj pair Arreglo que representa el par de puntos entre los que se viaja
+     * @return un arreglo que representa la clausula del viaje.
      */
     private int[] construirClausula(int[] pair) {
 
         int[] clausula = null;
 
-        int av1 = pair[0];
-        int ca1 = pair[1];
-        int av2 = pair[2];
-        int ca2 = pair[3];
+        int ca1 = pair[0];
+        int av1 = pair[1];
+        int ca2 = pair[2];
+        int av2 = pair[3];
 
         /* Esto quiere decir que estamos yendo desde el punto (av1,ca1) hacia
          * el punto (av2,ca2).
          */
 
         if (av1 < av2) {
-            clausula = this.avenida1Menor(ca1, av1, ca2, av2);
+            clausula = this.haciaLaDerecha(ca1, av1, ca2, av2);
         } else if (av1 == av2) {
-            clausula = this.avenida1Igual(ca1, av1, ca2, av2);
+            clausula = this.mismaAvenida(ca1, av1, ca2, av2);
         } else {
-            clausula = this.avenida1Mayor(ca1, av1, ca2, av2);
+            clausula = this.haciaLaIzquierda(ca1, av1, ca2, av2);
+        }
+
+        if (clausula != null) {
+            clausula[0] = calle(clausula[0]);
+            clausula[1] = avenida(clausula[1]);
+            clausula[2] = calle(clausula[2]);
+            clausula[3] = avenida(clausula[3]);
         }
 
         return clausula;
@@ -455,9 +474,13 @@ public class Main {
 
 
     /**
-     *
-     * @obj disj
-     * @obj digrafo
+     * Crea un arco en el grafo de implicaciones correspondiente a una disjun-
+     * cion del tipo (p \/ q)
+     * pre: la disjuncion debe ser del tipo (p \/ q); p y q deben pertenecer a
+     * digrafo
+     * post: Se añade un arco que representa esta disjuncion
+     * @param disj disjuncion  a procesar
+     * @param digrafo digrafo de implicaciones
      */
     private void implicacionPoQ(int p, int q, DiGraph digrafo) {
         int noP = p + 1;
@@ -472,9 +495,13 @@ public class Main {
     }
 
     /**
-     *
-     * @obj disj
-     * @obj digrafo
+     * Crea un arco en el grafo de implicaciones correspondiente a una disjun-
+     * cion del tipo (!p \/ !q)
+     * pre: la disjuncion debe ser del tipo (!p \/ !q); p y q deben pertenecer a
+     * digrafo
+     * post: Se añade un arco que representa esta disjuncion
+     * @param disj disjuncion  a procesar
+     * @param digrafo digrafo de implicaciones
      */
     private void implicacionNoPoNoQ(int noP, int noQ, DiGraph digrafo) {
         int pe = noP - 1;
@@ -489,9 +516,13 @@ public class Main {
     }
 
     /**
-     *
-     * @obj disj
-     * @obj digrafo
+     * Crea un arco en el grafo de implicaciones correspondiente a una disjun-
+     * cion del tipo (p \/ !q)
+     * pre: la disjuncion debe ser del tipo (p \/ !q); p y q deben pertenecer a
+     * digrafo
+     * post: Se añade un arco que representa esta disjuncion
+     * @param disj disjuncion  a procesar
+     * @param digrafo digrafo de implicaciones
      */
     private void implicacionPoNoQ(int pe, int noQ, DiGraph digrafo) {
         int noP = pe + 1;
@@ -506,9 +537,13 @@ public class Main {
     }
 
     /**
-     *
-     * @obj disj
-     * @obj digrafo
+     * Crea un arco en el grafo de implicaciones correspondiente a una disjun-
+     * cion del tipo (!p \/ q)
+     * pre: la disjuncion debe ser del tipo (!p \/ q); p y q deben pertenecer a
+     * digrafo
+     * post: Se añade un arco que representa esta disjuncion
+     * @param disj disjuncion  a procesar
+     * @param digrafo digrafo de implicaciones
      */
     private void implicacionNoPoQ(int noP, int q, DiGraph digrafo) {
         int pe = noP - 1;
@@ -523,9 +558,12 @@ public class Main {
     }
 
     /**
-     *
-     * @obj nCalle
-     * @return
+     * Mapea los numeros de calle a su correspondiente numero en la representa-
+     * cion.
+     * pre: true;
+     * post: se retorna la representacion de nCalle
+     * @param nCalle numero de calle a mapear
+     * @return la representacion de nCalle
      */
     private int calle(int nCalle) {
         int absNCalle = (0 <= nCalle ? nCalle - 1 : (nCalle * (-1)) );
@@ -534,9 +572,12 @@ public class Main {
     }
 
     /**
-     *
-     * @obj nAvenida
-     * @return
+     * Mapea los numeros de avenida a su correspondiente numero en la represen-
+     * tacion.
+     * pre: true;
+     * post: se retorna la representacion de nAvenida
+     * @param nAvenida numero de avenida a mapear
+     * @return la representacion de nAvenida
      */
     private int avenida(int nAvenida) {
         int absNAvenida = (0 <= nAvenida ? nAvenida - 1 : (nAvenida * (-1)));
@@ -546,11 +587,13 @@ public class Main {
     }
 
     /**
+     * Se inicializan los campos de esta clase para este caso de prueba
+     * pre: linea contiene la linea recien parseada y token sus elementos
+     * post: se inicializan los campos de la clase con estos valores
      *
-     * @obj caso
-     * @obj linea
-     * @obj tokens
-     * @throws IOException
+     * @param linea linea parseada
+     * @param tokens arreglo que contiene los elementos de linea
+     * @throws IOException en caso de ocurrir un error de formato
      */
     private void inicializacionesMisc(String linea, String[] tokens)
                                                             throws IOException
@@ -578,11 +621,12 @@ public class Main {
     }
 
     /**
-     *
-     * @obj caso
-     * @obj linea
-     * @obj tokens
-     * @throws IOException
+     * Almacena los pares de puntos entre los que se viajara
+     * pre: linea contiene la linea recien parseada y token sus elementos
+     * post: se inicializan los campos de la clase con estos valores
+     * @param linea linea parseada
+     * @param tokens arreglo que contiene los elementos de linea
+     * @throws IOException en caso de ocurrir un error de formato
      */
     private void almacenamientoDeViajes(String linea, String[] tokens)
                                                             throws IOException
@@ -619,9 +663,11 @@ public class Main {
     }
 
     /**
-     *
-     * @obj caso
-     * @throws IOException
+     * Carga el siguiente caso de prueba a analizar en los campos de esta clase
+     * pre true;
+     * post: se carga el siguiente caso
+     * @throws IOException en caso de que haya un error de lectura o de formato
+     * en el archivo de entrada
      */
     public void sigCasoDePrueba() throws IOException {
         this.nCasosProbados++;
@@ -640,20 +686,21 @@ public class Main {
 
             this.almacenamientoDeViajes(linea, tokens);
         }
+
+        this.tieneSolucion[0] = false;
+        this.tieneSolucion[1] = false;
     }
 
     /**
-     *
+     * Construye las clausulas de este caso de prueba
+     * pre: true
+     * post: las clausulas que modelan esta innstancia del problema estan carga-
+     * das en los campos de la clase
      */
     public void construirClausulas() {
         Iterator iterador = this.viajes.iterator();
         while (iterador.hasNext()) {
             int[] par = (int[])iterador.next();
-
-            par[0] = calle(par[0]);
-            par[1] = avenida(par[1]);
-            par[2] = calle(par[2]);
-            par[3] = avenida(par[3]);
 
             int[] clausula = this.construirClausula(par);
 
@@ -664,9 +711,92 @@ public class Main {
     }
 
     /**
-     * 
+     * Simplifica el modelo en forma 2CNF para eliminar las clausulas unitarias
+     * pre: true
+     * post: los literales unitarios se han eliminado, junto con las clausulas
+     * que dependen de el adecuadamanete
+     */
+    private void simplificar2CNF() {
+
+        int[] liter = Tarjan.generarArrEnteros(this.literalesSolos);
+
+        for (int i = 0; i < liter.length && !this.tieneSolucion[0]; i++) {
+            for (int j = i + 1; j<liter.length && !this.tieneSolucion[0]; j++){
+                if ( liter[i] % 2 == 0) {
+                    if (liter[j] == liter[i] + 1) {
+                        this.tieneSolucion[0] = true;
+                        this.tieneSolucion[1] = false;
+                    } else if (liter[j] == liter[i]) {
+                        this.literalesSolos.remove(new Integer(liter[i]));
+                        liter = Tarjan.generarArrEnteros(this.literalesSolos);
+                    }
+                } else {
+                    if (liter[j] == liter[i] - 1) {
+                        this.tieneSolucion[0] = true;
+                        this.tieneSolucion[1] = false;
+                    } else if (liter[j] == liter[i]) {
+                        this.literalesSolos.remove(new Integer(liter[i]));
+                        liter = Tarjan.generarArrEnteros(this.literalesSolos);
+                    }
+                }
+            }
+        }
+        
+        if (!this.tieneSolucion[0]) {
+            while (!this.literalesSolos.empty()) {
+                int lit = ((Integer) this.literalesSolos.pop()).intValue();
+
+                int[][] claus = new int[this.dosCNF.size()][];
+                Iterator auxIter = this.dosCNF.iterator();
+                for (int i = 0; i < claus.length; i++) {
+                    int[] arr = (int[]) auxIter.next();
+                    claus[i] = arr;
+                }
+
+                for (int i = 0; i < claus.length; i++) {
+                    if (lit % 2 == 0) {
+                        if (claus[i][0] == lit + 1) {
+                            this.dosCNF.remove(claus[i]);
+                            this.literalesSolos.push(new Integer(claus[i][1]));
+                        } else if (claus[i][0] == lit) {
+                            this.dosCNF.remove(claus[i]);
+                        }
+
+                        if (claus[i][1] == lit + 1) {
+                            this.dosCNF.remove(claus[i]);
+                            this.literalesSolos.push(new Integer(claus[i][0]));
+                        } else if (claus[i][1] == lit) {
+                            this.dosCNF.remove(claus[i]);
+                        }
+                    } else {
+                        if (claus[i][0] == lit - 1) {
+                            this.dosCNF.remove(claus[i]);
+                            this.literalesSolos.push(new Integer(claus[i][1]));
+                        } else if (claus[i][0] == lit) {
+                            this.dosCNF.remove(claus[i]);
+                        }
+
+                        if (claus[i][1] == lit - 1) {
+                            this.dosCNF.remove(claus[i]);
+                            this.literalesSolos.push(new Integer(claus[i][0]));
+                        } else if (claus[i][1] == lit) {
+                            this.dosCNF.remove(claus[i]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // BORRAR LAS COSAS COMENTADAS
+    /**
+     * Transforma las clausulas calculadas a la forma 2CNF
+     * pre: true
+     * post: se cargan las clausulas en 2CNF en el campo correspondiente de la
+     * clase
      */
     public void construir2CNF() {
+
         Iterator iterador = this.clausulas.iterator();
         while (iterador.hasNext()) {
             int[] clausula = (int[])iterador.next();
@@ -675,10 +805,71 @@ public class Main {
 
             // Se agrega la lista de disjunciones para formar la fórmula 2CNF:
 
-            this.dosCNF.add(disjunciones[0]);
-            this.dosCNF.add(disjunciones[1]);
-            this.dosCNF.add(disjunciones[2]);
-            this.dosCNF.add(disjunciones[3]);
+            int[] disj1 = new int[2];
+            disj1[0] = disjunciones[0][0];
+            disj1[1] = disjunciones[1][0];
+
+            int[] disj2 = new int[2];
+            disj2[0] = disjunciones[0][1];
+            disj2[1] = disjunciones[1][1];
+
+            int[] disj3 = new int[2];
+            disj3[0] = disjunciones[0][2];
+            disj3[1] = disjunciones[1][2];
+
+            int[] disj4 = new int[2];
+            disj4[0] = disjunciones[0][3];
+            disj4[1] = disjunciones[1][3];
+
+            this.dosCNF.add(disj1);
+            this.dosCNF.add(disj2);
+            this.dosCNF.add(disj3);
+            this.dosCNF.add(disj4);
+        }
+
+        int[][] claus = new int[this.clausulas.size()][];
+            Iterator auxIter = this.clausulas.iterator();
+            for (int i = 0; i < claus.length; i++) {
+                int[] arr = (int[])auxIter.next();
+                claus[i] = arr;
+            }
+
+        System.out.println("Clausulas originales:\n");
+        for (int i = 0; i < claus.length; i++) {
+            System.out.println("Clausula "+i+" = [(" +claus[i][0]+" ^ "+claus[i][1]+") or (" +claus[i][2]+" ^ "+claus[i][3]+")]");
+        }
+
+
+
+        claus = new int[this.dosCNF.size()][];
+        auxIter = this.dosCNF.iterator();
+            for (int i = 0; i < claus.length; i++) {
+                int[] arr = (int[])auxIter.next();
+                claus[i] = arr;
+            }
+
+        System.out.println("\n\nDisjunciones antes de simplificar:\n");
+        for (int i = 0; i < claus.length; i++) {
+            System.out.println("Disjuncion "+i+" = (" +claus[i][0]+" or "+claus[i][1]+")");
+        }
+
+        this.simplificar2CNF();
+
+        claus = new int[this.dosCNF.size()][];
+        auxIter = this.dosCNF.iterator();
+        for (int i = 0; i < claus.length; i++) {
+            int[] arr = (int[])auxIter.next();
+            claus[i] = arr;
+        }
+
+        System.out.println("\n\nDisjunciones despues de simplificar:\n");
+        for (int i = 0; i < claus.length; i++) {
+            System.out.println("Disjuncion "+i+" = (" +claus[i][0]+" or "+claus[i][1]+")");
+        }
+
+        if (!this.tieneSolucion[0] && this.dosCNF.isEmpty()) {
+            this.tieneSolucion[0] = true;
+            this.tieneSolucion[1] = true;
         }
     }
 
@@ -687,31 +878,38 @@ public class Main {
      * @return
      */
     public void construirGrafoDeImplicaciones() {
-        
-        /* Por razones de eficiencia, se escogió la implementación
-         * DiGraphList, pero se deja el otro constructor comentado para
-         * facilmente cambiar de implementación.
-         */
 
-        this.digrafo = new DiGraphList(this.nNodos + this.nDummies);
-        //this.digrafo = new DiGraphMatrix(this.nNodos + this.nDummies);
+        if (!this.tieneSolucion[0]) {
+            /* Por razones de eficiencia, se escogió la implementación
+             * DiGraphList, pero se deja el otro constructor comentado para
+             * facilmente cambiar de implementación.
+             */
 
-        Iterator iter = this.dosCNF.iterator();
+            this.digrafo = new DiGraphList(this.nNodos);
+            //this.digrafo = new DiGraphMatrix(this.nNodos + this.nDummies);
 
-        while (iter.hasNext()) {
-            int[] disj = (int[])iter.next();
+            int[][] disj = new int[this.dosCNF.size()][];
+            Iterator iter = this.dosCNF.iterator();
 
-            if (disj[0] % 2 == 0) {
-                if (disj[1] % 2 == 0) {
-                    this.implicacionPoQ(disj[0], disj[1], digrafo);
+            for (int i = 0; i < disj.length; i++) {
+                int[] arr = (int[]) iter.next();
+                disj[i] = arr;
+            }
+
+            for (int i = 0; i < disj.length; i++) {
+
+                if (disj[i][0] % 2 == 0) {
+                    if (disj[i][1] % 2 == 0) {
+                        this.implicacionPoQ(disj[i][0], disj[i][1], digrafo);
+                    } else {
+                        this.implicacionPoNoQ(disj[i][0], disj[i][1], digrafo);
+                    }
                 } else {
-                    this.implicacionPoNoQ(disj[0], disj[1], digrafo);
-                }
-            } else {
-                if (disj[1] % 2 == 0) {
-                    this.implicacionNoPoQ(disj[0], disj[1], digrafo);
-                } else {
-                    this.implicacionNoPoNoQ(disj[0], disj[1], digrafo);
+                    if (disj[i][1] % 2 == 0) {
+                        this.implicacionNoPoQ(disj[i][0], disj[i][1], digrafo);
+                    } else {
+                        this.implicacionNoPoNoQ(disj[i][0], disj[i][1], digrafo);
+                    }
                 }
             }
         }
@@ -721,79 +919,29 @@ public class Main {
      *
      */
     public void calcularComponentesFuertementeConexas() {
-        Param<Integer> indice = new Param(new Integer(0));
 
-        int[] index = new int[this.digrafo.numNodes];
-        int[] lowLink = new int[this.digrafo.numNodes];
-        for (int i = 0; i < index.length; i++) {
-            index[i] = -1;
-            lowLink[i] = -1;
-        }
+        if (!this.tieneSolucion[0]) {
+            Tarjan tarjan = new Tarjan(this.digrafo);
+            this.compsFuertConexas = tarjan.ejecutar();
 
-        Stack<Integer> Stack = new Stack();
+            System.out.println("Componentes Fuertemente Conexas:\n");
+            int[][] claus = new int[this.compsFuertConexas.size()][];
+            Iterator auxIter = this.compsFuertConexas.iterator();
+            for (int i = 0; i < claus.length; i++) {
+                List<Integer> lis = (List<Integer>)auxIter.next();
+                System.out.println("Componente "+i+" :\n" + lis.toString());
+            }
 
-        List<Integer> compFuertCon = new Lista();
+            if (this.compsFuertConexas.size() == 1) {
+                this.tieneSolucion[0] = true;
+                this.tieneSolucion[1] = false;
+            }
 
-        for (int v = 0; v < this.digrafo.numNodes; v++) {
-            compFuertCon = this.tarjan(v, indice, index, lowLink, Stack);
-            
-            if (compFuertCon != null) {
-                this.compsFuertConexas.add(compFuertCon);
+            if (this.compsFuertConexas.size() == this.nNodos) {
+                this.tieneSolucion[0] = true;
+                this.tieneSolucion[1] = true;
             }
         }
-    }
-
-    /**
-     *
-     * @param v
-     * @param indice
-     * @param index
-     * @param lowLink
-     * @param stack
-     * @return
-     */
-    private List<Integer> tarjan(int   v,
-                                 Param indice,
-                                 int[] index,
-                                 int[] lowLink,
-                                 Stack stack)
-    {
-        List<Integer> compFuertCon = new Lista();
-
-        index[v] = ((Integer)indice.getParametro()).intValue();
-        lowLink[v] = index[v];
-        indice.setParametro(new Integer((index[v] + 1)));
-        stack.push(new Integer(v));
-
-        List<Integer> suces = this.digrafo.getSucesors(v);
-        Iterator iter = suces.iterator();
-
-        while (iter.hasNext()) {
-            int w = (Integer)iter.next();
-
-            if (index[w] == -1) {
-
-                List<Integer> aux = null;
-                aux = this.tarjan(w, indice, index, lowLink, stack);
-                if (aux != null) {
-                    compFuertCon = aux;
-                }
-
-                lowLink[v] = (lowLink[v] <= lowLink[w] ? lowLink[v]:lowLink[w]);
-            } else if (stack.contains(new Integer(w))) {
-                lowLink[v] = (lowLink[v] <= index[w] ? lowLink[v] : index[w]);
-            }
-        }
-
-        if (lowLink[v] == index[v]) {
-            Integer w = -1;
-            do {
-                w = (Integer)stack.pop();
-
-                compFuertCon.add(w);
-            } while (w.intValue() != v);
-        }
-        return compFuertCon;
     }
 
     /**
@@ -812,7 +960,7 @@ public class Main {
         
         for (int i = 0; i < comp.length && noHayProblema; i++) {
             if (comp[i] < ((2 * this.a ) + (2 * this.c ))) {
-                for (int j = i; j < comp.length && noHayProblema; j++) {
+                for (int j = i + 1; j < comp.length && noHayProblema; j++) {
                     if (comp[j] < ((2 * this.a ) + (2 * this.c ))) {
                         if ( comp[i] % 2 == 0 ) {
                             noHayProblema = (comp[j] != comp[i] + 1);
@@ -831,14 +979,17 @@ public class Main {
      */
     public void decision() {
         String desicion = "";
-        boolean tieneSolucion = true;
+        
 
-        Iterator iter = this.compsFuertConexas.iterator();
-        while (iter.hasNext() && tieneSolucion) {
-            tieneSolucion = analizarComponente(((List<Integer>)iter.next()));
+        if (!this.tieneSolucion[0]) {
+            Iterator iter = this.compsFuertConexas.iterator();
+            while (iter.hasNext() && !this.tieneSolucion[1]) {
+                this.tieneSolucion[1] = analizarComponente
+                                                (((List<Integer>) iter.next()));
+            }
         }
 
-        desicion = ( tieneSolucion ? "Si." : "No.");
+        desicion = ( this.tieneSolucion[1] ? "Si." : "No.");
 
         this.out.println(desicion);
     }
@@ -861,7 +1012,12 @@ public class Main {
             vialidad.construirClausulas();
             vialidad.construir2CNF();
             vialidad.construirGrafoDeImplicaciones();
+            if (!vialidad.tieneSolucion[0]) {
+                System.out.println(vialidad.digrafo);
+            }
             vialidad.calcularComponentesFuertementeConexas();
+            
+
             vialidad.decision();
         }
 
