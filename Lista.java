@@ -13,9 +13,9 @@ import java.util.NoSuchElementException;
 public class Lista<E> implements List<E>{
 
     // Modelo de representación:
-    private Nodo head;
-    private Nodo tail;
-    private int  tam;
+    protected Nodo head;
+    protected Nodo tail;
+    protected int  tam;
 
     // Constructores:
 
@@ -56,7 +56,7 @@ public class Lista<E> implements List<E>{
 
     /**
      * Agrega <i>element</i> a la lista en la posicion <i>index</i>, si index
-     * &gt; que this.size() el elemento se agrega al final de lista.
+     * &gt; this.size() el elemento se agrega al final de lista.
      * pre: {@code 0 <= index && index <= this.tam;}
      * post: {@code this.contains(element) && this.indexOf(element) == index;}
      * tambien;
@@ -191,13 +191,19 @@ public class Lista<E> implements List<E>{
      *
      * @param index posicion del elemento a devolver.
      * @return el elemento {@code e} tal que
-     * {@code this.contains(e) y this.indexOf(e) == index si} {@code index} &le;
-     * this.size(); null si index &gt; size()
+     * {@code this.contains(e) && this.indexOf(e) == index} si
+     * {@code index &le; this.size()}; null si {@code index &gt; this.size()}
      */
     public E get(int index) {
         if (0 <= index && index < this.size()) {
-            Object[] lista = this.toArray();
-            return (E) lista[index];
+            if (index == 0) {
+                return (E) this.head.next.elem;
+            } else if (index == this.size() -1) {
+                return (E) this.tail.elem;
+            } else {
+                Object[] lista = this.toArray();
+                return (E) lista[index];
+            }
         } else {
             return null;
         }
@@ -368,7 +374,7 @@ public class Lista<E> implements List<E>{
      * Clase interna que representa cada uno de los nodos de la lista.
      * @param <E> El tipo de elementos que guarda este nodo.
      */
-    private class Nodo <E>{
+    protected class Nodo <E>{
 
         // Modelo de representación:
         public E elem;

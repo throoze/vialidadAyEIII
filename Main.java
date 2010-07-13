@@ -116,94 +116,96 @@ public class Main {
     /**
      * Nombre del archivo de entrada.
      */
-    private String          inputFile; 
+    private String              inputFile;
 
     /**
      * Nombre del archivo de salida.
      */
-    private String          outputFile;
+    private String              outputFile;
 
     /**
      * Buffer de entrada (Lectura).
      */
-    private BufferedReader  in;
+    private BufferedReader      in;
 
     /**
      * Flujo de salida (Escritura).
      */
-    private PrintStream     out;
+    private PrintStream         out;
 
     /**
      * Numero de instancias del problema a resolver.
      */
-    private int             nInstancias;
+    private int                 nInstancias;
     
     /**
      * Numero de casos que se han estraido del archivo de entrada
      */
-    private int             nCasosProbados;
+    private int                 nCasosProbados;
 
     /**
      * Numero de calles del caso en uso.
      */
-    private int             c;
+    private int                 c;
 
     /**
      * Numero de avenidas del caso en uso.
      */
-    private int             a;
+    private int                 a;
 
     /**
      * Numero de pares de lugares del caso en uso.
      */
-    private int             p;
+    private int                 p;
 
     /**
      * Número en el que termina la representación de las calles y comienza la de
      * las avenidas
      */
-    private int             offset;
+    private int                 offset;
 
     /**
      * Lista de pares de puntos entre los cuales se debe verificar si se puede
      * viajar de manera eficiente.
      */
-    private List<int[]>     viajes;
+    private List<int[]>         viajes;
 
     /**
      * Cláusulas iniciales que modelan el problema.
      */
-    private List<int[]>     clausulas;
+    private List<int[]>         clausulas;
 
     /**
      * Cláusulas que modelan el problema en la forma 2CNF.
      */
-    private List<int[]>     dosCNF;
+    private List<int[]>         dosCNF;
 
     /**
      * Grafo de implicaciones que resolverá esta instancia del problema
      */
-    private DiGraph         digrafo;
+    private DiGraph             digrafo;
 
     /**
      * Número de nodos que tendrá el grafo de implicaciones, excluyendo nodos
      * dummy para el trato de los casos en los que se viaja sobre la misma calle
      * o la misma avenida.
      */
-    private int             nNodos;
+    private int                 nNodos;
 
     /**
      * Cantidad de variables dummy que serán necesarias para tratar los casos en
      * los que se viaja sobre la misma calle o la misma avenida
      */
-    private int             nDummies;
+    private int                 nDummies;
+
+    private List<List<Integer>> compsFuertConexas;
 
     // CONSTRUCTOR:
 
     /**
      *
-     * @param inFile
-     * @param outFile
+     * @obj inFile
+     * @obj outFile
      * @throws IOException
      */
     public Main (String inFile, String outFile) throws IOException {
@@ -245,7 +247,7 @@ public class Main {
 
     /**
      *
-     * @param clausula
+     * @obj clausula
      * @return
      */
     private static int[][] distributiva(int[] clausula) {
@@ -295,10 +297,10 @@ public class Main {
 
     /**
      *
-     * @param ca1
-     * @param av1
-     * @param ca2
-     * @param av2
+     * @obj ca1
+     * @obj av1
+     * @obj ca2
+     * @obj av2
      * @return
      */
     private int[] avenida1Menor(int ca1, int av1, int ca2, int av2) {
@@ -335,10 +337,10 @@ public class Main {
 
     /**
      *
-     * @param ca1
-     * @param av1
-     * @param ca2
-     * @param av2
+     * @obj ca1
+     * @obj av1
+     * @obj ca2
+     * @obj av2
      * @return
      */
     private int[] avenida1Mayor(int ca1, int av1, int ca2, int av2) {
@@ -375,10 +377,10 @@ public class Main {
 
     /**
      *
-     * @param ca1
-     * @param av1
-     * @param ca2
-     * @param av2
+     * @obj ca1
+     * @obj av1
+     * @obj ca2
+     * @obj av2
      * @return
      */
     private int[] avenida1Igual(int ca1, int av1, int ca2, int av2) {
@@ -424,7 +426,7 @@ public class Main {
 
     /**
      *
-     * @param pair
+     * @obj pair
      * @return
      */
     private int[] construirClausula(int[] pair) {
@@ -454,8 +456,8 @@ public class Main {
 
     /**
      *
-     * @param disj
-     * @param digrafo
+     * @obj disj
+     * @obj digrafo
      */
     private void implicacionPoQ(int p, int q, DiGraph digrafo) {
         int noP = p + 1;
@@ -471,8 +473,8 @@ public class Main {
 
     /**
      *
-     * @param disj
-     * @param digrafo
+     * @obj disj
+     * @obj digrafo
      */
     private void implicacionNoPoNoQ(int noP, int noQ, DiGraph digrafo) {
         int pe = noP - 1;
@@ -488,8 +490,8 @@ public class Main {
 
     /**
      *
-     * @param disj
-     * @param digrafo
+     * @obj disj
+     * @obj digrafo
      */
     private void implicacionPoNoQ(int pe, int noQ, DiGraph digrafo) {
         int noP = pe + 1;
@@ -505,8 +507,8 @@ public class Main {
 
     /**
      *
-     * @param disj
-     * @param digrafo
+     * @obj disj
+     * @obj digrafo
      */
     private void implicacionNoPoQ(int noP, int q, DiGraph digrafo) {
         int pe = noP - 1;
@@ -522,10 +524,10 @@ public class Main {
 
     /**
      *
-     * @param nCalle
+     * @obj nCalle
      * @return
      */
-    public int calle(int nCalle) {
+    private int calle(int nCalle) {
         int absNCalle = (0 <= nCalle ? nCalle - 1 : (nCalle * (-1)) );
         int calle = ( (absNCalle * 2) - ( nCalle < 0 ? 1 : 0 ) );
         return calle;
@@ -533,10 +535,10 @@ public class Main {
 
     /**
      *
-     * @param nAvenida
+     * @obj nAvenida
      * @return
      */
-    public int avenida(int nAvenida) {
+    private int avenida(int nAvenida) {
         int absNAvenida = (0 <= nAvenida ? nAvenida - 1 : (nAvenida * (-1)));
         int avenida = ((absNAvenida * 2) - ( nAvenida < 0 ? 1 : 0));
         avenida = avenida + this.offset;
@@ -545,12 +547,12 @@ public class Main {
 
     /**
      *
-     * @param caso
-     * @param linea
-     * @param tokens
+     * @obj caso
+     * @obj linea
+     * @obj tokens
      * @throws IOException
      */
-    public void inicializacionesMisc(String linea, String[] tokens)
+    private void inicializacionesMisc(String linea, String[] tokens)
                                                             throws IOException
     {
         // Se verifica que se lean números enteros
@@ -577,12 +579,12 @@ public class Main {
 
     /**
      *
-     * @param caso
-     * @param linea
-     * @param tokens
+     * @obj caso
+     * @obj linea
+     * @obj tokens
      * @throws IOException
      */
-    public void almacenamientoDeViajes(String linea, String[] tokens)
+    private void almacenamientoDeViajes(String linea, String[] tokens)
                                                             throws IOException
     {
         // Se almacenan los pares de lugares a visitar
@@ -618,7 +620,7 @@ public class Main {
 
     /**
      *
-     * @param caso
+     * @obj caso
      * @throws IOException
      */
     public void sigCasoDePrueba() throws IOException {
@@ -716,7 +718,133 @@ public class Main {
     }
 
     /**
-     * @param args the command line arguments
+     *
+     */
+    public void calcularComponentesFuertementeConexas() {
+        Param<Integer> indice = new Param(new Integer(0));
+
+        int[] index = new int[this.digrafo.numNodes];
+        int[] lowLink = new int[this.digrafo.numNodes];
+        for (int i = 0; i < index.length; i++) {
+            index[i] = -1;
+            lowLink[i] = -1;
+        }
+
+        Stack<Integer> Stack = new Stack();
+
+        List<Integer> compFuertCon = new Lista();
+
+        for (int v = 0; v < this.digrafo.numNodes; v++) {
+            compFuertCon = this.tarjan(v, indice, index, lowLink, Stack);
+            
+            if (compFuertCon != null) {
+                this.compsFuertConexas.add(compFuertCon);
+            }
+        }
+    }
+
+    /**
+     *
+     * @param v
+     * @param indice
+     * @param index
+     * @param lowLink
+     * @param stack
+     * @return
+     */
+    private List<Integer> tarjan(int   v,
+                                 Param indice,
+                                 int[] index,
+                                 int[] lowLink,
+                                 Stack stack)
+    {
+        List<Integer> compFuertCon = new Lista();
+
+        index[v] = ((Integer)indice.getParametro()).intValue();
+        lowLink[v] = index[v];
+        indice.setParametro(new Integer((index[v] + 1)));
+        stack.push(new Integer(v));
+
+        List<Integer> suces = this.digrafo.getSucesors(v);
+        Iterator iter = suces.iterator();
+
+        while (iter.hasNext()) {
+            int w = (Integer)iter.next();
+
+            if (index[w] == -1) {
+
+                List<Integer> aux = null;
+                aux = this.tarjan(w, indice, index, lowLink, stack);
+                if (aux != null) {
+                    compFuertCon = aux;
+                }
+
+                lowLink[v] = (lowLink[v] <= lowLink[w] ? lowLink[v]:lowLink[w]);
+            } else if (stack.contains(new Integer(w))) {
+                lowLink[v] = (lowLink[v] <= index[w] ? lowLink[v] : index[w]);
+            }
+        }
+
+        if (lowLink[v] == index[v]) {
+            Integer w = -1;
+            do {
+                w = (Integer)stack.pop();
+
+                compFuertCon.add(w);
+            } while (w.intValue() != v);
+        }
+        return compFuertCon;
+    }
+
+    /**
+     *
+     * @param componente
+     * @return
+     */
+    private boolean analizarComponente(List<Integer> componente) {
+        int[] comp = new int[componente.size()];
+        Iterator iter = componente.iterator();
+        boolean noHayProblema = true;
+        
+        for (int i = 0; i < comp.length; i++) {
+            comp[i] = ((Integer)iter.next()).intValue();
+        }
+        
+        for (int i = 0; i < comp.length && noHayProblema; i++) {
+            if (comp[i] < ((2 * this.a ) + (2 * this.c ))) {
+                for (int j = i; j < comp.length && noHayProblema; j++) {
+                    if (comp[j] < ((2 * this.a ) + (2 * this.c ))) {
+                        if ( comp[i] % 2 == 0 ) {
+                            noHayProblema = (comp[j] != comp[i] + 1);
+                        } else {
+                            noHayProblema = (comp[j] != comp[i] - 1);
+                        }
+                    }
+                }
+            }
+        }
+        return noHayProblema;
+    }
+
+    /**
+     *
+     */
+    public void decision() {
+        String desicion = "";
+        boolean tieneSolucion = true;
+
+        Iterator iter = this.compsFuertConexas.iterator();
+        while (iter.hasNext() && tieneSolucion) {
+            tieneSolucion = analizarComponente(((List<Integer>)iter.next()));
+        }
+
+        desicion = ( tieneSolucion ? "Si." : "No.");
+
+        this.out.println(desicion);
+    }
+
+    /**
+     * @obj args the command line arguments
      */
     public static void main(String[] args) throws IOException{
         Main vialidad = null;
@@ -731,9 +859,53 @@ public class Main {
         while (vialidad.hasNext()) {
             vialidad.sigCasoDePrueba();
             vialidad.construirClausulas();
+            vialidad.construir2CNF();
             vialidad.construirGrafoDeImplicaciones();
+            vialidad.calcularComponentesFuertementeConexas();
+            vialidad.decision();
         }
 
+    }
+
+    /**
+     * Clase privada que sirve para poder simular el paso de parámetros por
+     * referencia en java. Servirá especialmente en la recursión del método para
+     * palcular las componentes fuertemente conexas.
+     * @obj <E> El tipo del objeto a encapsular.
+     */
+    private class Param<E> {
+
+        /**
+         * El parámetro que se está encapsulando
+         */
+        E obj;
+
+        /**
+         * Constructor del encapsulador {@code Param}. Encapsula el elemento
+         * {@code elem}
+         * @param elem Elemento a encapsular
+         */
+        public Param(E elem) {
+            this.obj = elem;
+        }
+
+        /**
+         * Getter de la clase Param. Devuelve el objeto encapsulado por éste
+         * {@code Param}
+         * @return El parámetro encapsulado.
+         */
+        public E getParametro() {
+            return (E)this.obj;
+        }
+
+        /**
+         * Setter del objeto Param. Establece un nuevo valor para el
+         * elemento encapsulado
+         * @param elem El nuevo valor para el objeto encapsulado.
+         */
+        public void setParametro(E elem) {
+            this.obj = (E) elem;
+        }
     }
 
 }
