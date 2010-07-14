@@ -765,41 +765,63 @@ public class Main {
                 }
 
                 for (int i = 0; i < claus.length; i++) {
-                    if (lit % 2 == 0) {
-                        if (claus[i][0] == lit + 1) {
-                            this.dosCNF.remove(claus[i]);
-                            this.literalesSolos.push(new Integer(claus[i][1]));
-                        } else if (claus[i][0] == lit) {
-                            this.dosCNF.remove(claus[i]);
-                        }
-
-                        if (claus[i][1] == lit + 1) {
-                            this.dosCNF.remove(claus[i]);
-                            this.literalesSolos.push(new Integer(claus[i][0]));
-                        } else if (claus[i][1] == lit) {
-                            this.dosCNF.remove(claus[i]);
-                        }
-                    } else {
-                        if (claus[i][0] == lit - 1) {
-                            this.dosCNF.remove(claus[i]);
-                            this.literalesSolos.push(new Integer(claus[i][1]));
-                        } else if (claus[i][0] == lit) {
-                            this.dosCNF.remove(claus[i]);
-                        }
-
-                        if (claus[i][1] == lit - 1) {
-                            this.dosCNF.remove(claus[i]);
-                            this.literalesSolos.push(new Integer(claus[i][0]));
-                        } else if (claus[i][1] == lit) {
-                            this.dosCNF.remove(claus[i]);
-                        }
-                    }
+                    this.procesarLit(i, lit, claus);
                 }
             }
             if (this.dosCNF.isEmpty()) {
                 this.tieneSolucion[0] = true;
                 this.tieneSolucion[1] = true;
             }
+        }
+    }
+
+    /**
+     * Procesa el literal pasado. Decide que hacer en funcion de la comparación
+     * del literal con cada parte de la disjuncion pasada.
+     * pre: i debe estar entre 0 y disjs.length y lit debe estar entre 0 y
+     * this.nNodos
+     * post: se analizan todas las disjunciones y si en alguna esta lit, esta se
+     * elimina; y si esta noLit, se elimina y el literal que lo acompaña se
+     * agrega a la pila de literales solos.
+     *
+     * @param i Numero de disjunción que se está analizando
+     * @param lit Representación del literal a comparar
+     * @param disjs Todas las disjunciones a comparar
+     */
+    private void procesarLit(int i, int lit, int[][] disjs) {
+
+        int noLit = (lit % 2 == 0 ? lit + 1 : lit - 1);
+        int pe = disjs[i][0];
+        int q = disjs[i][1];
+        int noP = (pe % 2 == 0 ? pe + 1 : pe - 1);
+        int noQ = (q % 2 == 0 ? q + 1 : q - 1);
+
+        if (pe == noLit) {
+            this.dosCNF.remove(disjs[i]);
+            if (!this.literalesSolos.contains(new Integer(noQ))) {
+                if (!this.literalesSolos.contains(new Integer(q))) {
+                    this.literalesSolos.push(new Integer(q));
+                }
+            } else {
+                this.tieneSolucion[0] = true;
+                this.tieneSolucion[1] = false;
+            }
+        } else if (pe == lit) {
+            this.dosCNF.remove(disjs[i]);
+        }
+
+        if (q == noLit) {
+            this.dosCNF.remove(disjs[i]);
+            if (!this.literalesSolos.contains(new Integer(noP))) {
+                if (!this.literalesSolos.contains(new Integer(pe))) {
+                    this.literalesSolos.push(new Integer(pe));
+                }
+            } else {
+                this.tieneSolucion[0] = true;
+                this.tieneSolucion[1] = false;
+            }
+        } else if (q == lit) {
+            this.dosCNF.remove(disjs[i]);
         }
     }
 
@@ -987,7 +1009,7 @@ public class Main {
      * Programa trincipal. Controla el flujo del resto de los métodos.
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws IOException{
+        public static void main(String[] args) throws IOException{
         Main vialidad = null;
         if (args.length == 2) {
             vialidad = new Main(args[0], args[1]);
