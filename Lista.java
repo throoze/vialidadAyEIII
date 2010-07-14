@@ -148,8 +148,20 @@ public class Lista<E> implements List<E>{
         Nodo aux = this.head;
         while (aux.next != null) {
             aux =  aux.next;
-            if (aux.elem.equals((E)o)) {
-                return true;
+            if (o instanceof int[] && aux.elem instanceof int[]) {
+                int[] nuevo = (int[])o;
+                int[] este = (int[])aux.elem;
+                boolean equals = true;
+                for (int i = 0; i < nuevo.length && equals; i++) {
+                    equals = (nuevo[i] == este[i]);
+                }
+                if (equals) {
+                    return equals;
+                }
+            } else {
+                if (aux.elem.equals((E) o)) {
+                    return true;
+                }
             }
         }
         return false;

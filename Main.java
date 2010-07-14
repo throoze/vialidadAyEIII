@@ -252,18 +252,6 @@ public class Main {
             }
             this.nCasosProbados = 0;
         }
-
-        // Se inicializan los contenedores en vacío.
-
-        this.viajes = new Lista();
-        this.clausulas = new Lista();
-        this.dosCNF = new Lista();
-        this.compsFuertConexas = new Lista();
-        this.literalesSolos = new Stack();
-
-        this.tieneSolucion = new boolean[2];
-        this.tieneSolucion[0] = false;
-        this.tieneSolucion[1] = false;
     }
 
     // MÉTODOS ESTÁTICOS:
@@ -310,7 +298,22 @@ public class Main {
         return disjunciones;
     }
 
-    
+    /**
+     * Invierte los contenidos de las cajas de un arreglo de tamaño 2.
+     * pre: disj.length == 2
+     * post: se devuelve un arreglo con las posiciones de disj invertidas.
+     * @param disj arreglo a invertir
+     * @return un arreglo con los contenidos invertidos a los de entrada.
+     */
+    private static int[] simetrico(int[] disj) {
+        if (disj.length == 2) {
+            int[] aux = new int[2];
+            aux[0] = disj[1];
+            aux[1] = disj[0];
+            return aux;
+        }
+        return null;
+    }
 
     // MÉTODOS NO-ESTÁTICOS:
     
@@ -337,28 +340,31 @@ public class Main {
     private int[] haciaLaDerecha(int ca1, int av1, int ca2, int av2) {
 
         int[] clausula = new int[4];
-        int noC1 = ca1;
-        int noA1 = 0;
-        int noC2 = 0;
-        int noA2 = 0;
-
 
         if (ca1 < ca2) {
             // Primer posible camino
-            clausula[0]= ca1; clausula[1]= av2;
+            clausula[0]= this.calle(ca1); clausula[1]= this.avenida(av2);
             // Segundo posible camino
-            clausula[2]= ca2; clausula[3]= av1;
+            clausula[2]= this.calle(ca2); clausula[3]= this.avenida(av1);
         } else if (ca1 == ca2) {
             /* Sólo hay un camino posible. Almaceno este literal en la lista de
              * literales solos.
              */
-            this.literalesSolos.push(new Integer(ca1));
+            if (!this.literalesSolos.contains(new Integer(this.calle(-ca1)))) {
+                if (!this.literalesSolos.contains
+                                (new Integer(this.calle(ca1)))) {
+                    this.literalesSolos.push(new Integer(this.calle(ca1)));
+                }
+            } else {
+                this.tieneSolucion[0] = true;
+                this.tieneSolucion[1] = false;
+            }
             return null;
         } else {
             // Primer posible camino
-            clausula[0]= ca1; clausula[1]= -av2;
+            clausula[0]= this.calle(ca1); clausula[1]= this.avenida(-av2);
             // Segundo posible camino
-            clausula[2]= ca2; clausula[3]= -av1;
+            clausula[2]= this.calle(ca2); clausula[3]= this.avenida(-av1);
         }
 
         return clausula;
@@ -380,22 +386,30 @@ public class Main {
 
         int[] clausula = new int[4];
 
-        if (ca1 < ca2) {
+        if (ca1 < ca2) {// hacia abajo
             // Primer posible camino
-            clausula[0]= -ca1; clausula[1]= av2;
+            clausula[0]= this.calle(-ca1); clausula[1]= this.avenida(av2);
             // Segundo posible camino
-            clausula[2]= -ca2; clausula[3]= av1;
+            clausula[2]= this.calle(-ca2); clausula[3]= this.avenida(av1);
         } else if (ca1 == ca2) {
             /* Sólo hay un camino posible. Almaceno este literal en la lista de
              * literales solos.
              */
-            this.literalesSolos.push(new Integer(ca1));
+            if (!this.literalesSolos.contains(new Integer(this.calle(ca1)))) {
+                if (!this.literalesSolos.contains
+                                (new Integer(this.calle(-ca1)))) {
+                    this.literalesSolos.push(new Integer(this.calle(-ca1)));
+                }
+            } else {
+                this.tieneSolucion[0] = true;
+                this.tieneSolucion[1] = false;
+            }
             return null;
-        } else {
+        } else { // hacia arriba
             // Primer posible camino
-            clausula[0]= -ca1; clausula[1]= -av2;
+            clausula[0]= this.calle(-ca1); clausula[1]= this.avenida(-av2);
             // Segundo posible camino
-            clausula[2]= -ca2; clausula[3]= -av1;
+            clausula[2]= this.calle(-ca2); clausula[3]= this.avenida(-av1);
         }
 
         return clausula;
@@ -418,12 +432,28 @@ public class Main {
             /* Sólo hay un camino posible. Almaceno este literal en la lista de
              * literales solos.
              */
-            this.literalesSolos.push(new Integer(new Integer(avenida(av1))));
+            if (!this.literalesSolos.contains(new Integer(this.avenida(-av1)))){
+                if (!this.literalesSolos.contains
+                                (new Integer(this.avenida(av1)))) {
+                    this.literalesSolos.push(new Integer(this.avenida(av1)));
+                }
+            } else {
+                this.tieneSolucion[0] = true;
+                this.tieneSolucion[1] = false;
+            }
         } else if (ca2 < ca1) { // hacia arriba
             /* Sólo hay un camino posible. Almaceno este literal en la lista de
              * literales solos.
              */
-            this.literalesSolos.push(new Integer(new Integer(avenida(-av1))));
+            if (!this.literalesSolos.contains(new Integer(this.avenida(av1)))){
+                if (!this.literalesSolos.contains
+                                (new Integer(this.avenida(-av1)))) {
+                    this.literalesSolos.push(new Integer(this.avenida(-av1)));
+                }
+            } else {
+                this.tieneSolucion[0] = true;
+                this.tieneSolucion[1] = false;
+            }
         } else {
             /* No se trata el caso cual las calles son iguales, ya que se
              * trataría de el mismo punto y no habría nada que hacer. En este
@@ -460,13 +490,6 @@ public class Main {
             clausula = this.mismaAvenida(ca1, av1, ca2, av2);
         } else {
             clausula = this.haciaLaIzquierda(ca1, av1, ca2, av2);
-        }
-
-        if (clausula != null) {
-            clausula[0] = calle(clausula[0]);
-            clausula[1] = avenida(clausula[1]);
-            clausula[2] = calle(clausula[2]);
-            clausula[3] = avenida(clausula[3]);
         }
 
         return clausula;
@@ -671,6 +694,21 @@ public class Main {
      */
     public void sigCasoDePrueba() throws IOException {
         this.nCasosProbados++;
+
+        // REINICIALIZAR TODO:
+
+        this.tieneSolucion = new boolean[2];
+        this.tieneSolucion[0] = false;
+        this.tieneSolucion[1] = false;
+
+        this.clausulas = new Lista();
+        this.compsFuertConexas = new Lista();
+        this.dosCNF = new Lista();
+        this.literalesSolos = new Stack();
+        this.nNodos = 0;
+        this.offset = 0;
+        this.viajes = new Lista();
+
         // Se lee la primera linea del caso en uso
         String linea = this.in.readLine();
         String[] tokens = linea.split(" ");
@@ -686,9 +724,6 @@ public class Main {
 
             this.almacenamientoDeViajes(linea, tokens);
         }
-
-        this.tieneSolucion[0] = false;
-        this.tieneSolucion[1] = false;
     }
 
     /**
@@ -699,9 +734,9 @@ public class Main {
      */
     public void construirClausulas() {
         Iterator iterador = this.viajes.iterator();
-        while (iterador.hasNext()) {
-            int[] par = (int[])iterador.next();
-
+        while (iterador.hasNext() && !this.tieneSolucion[0]) {
+            int[] par = (int[]) iterador.next();
+            
             int[] clausula = this.construirClausula(par);
 
             if (clausula != null) {
@@ -718,30 +753,6 @@ public class Main {
      */
     private void simplificar2CNF() {
 
-        int[] liter = Tarjan.generarArrEnteros(this.literalesSolos);
-
-        for (int i = 0; i < liter.length && !this.tieneSolucion[0]; i++) {
-            for (int j = i + 1; j<liter.length && !this.tieneSolucion[0]; j++){
-                if ( liter[i] % 2 == 0) {
-                    if (liter[j] == liter[i] + 1) {
-                        this.tieneSolucion[0] = true;
-                        this.tieneSolucion[1] = false;
-                    } else if (liter[j] == liter[i]) {
-                        this.literalesSolos.remove(new Integer(liter[i]));
-                        liter = Tarjan.generarArrEnteros(this.literalesSolos);
-                    }
-                } else {
-                    if (liter[j] == liter[i] - 1) {
-                        this.tieneSolucion[0] = true;
-                        this.tieneSolucion[1] = false;
-                    } else if (liter[j] == liter[i]) {
-                        this.literalesSolos.remove(new Integer(liter[i]));
-                        liter = Tarjan.generarArrEnteros(this.literalesSolos);
-                    }
-                }
-            }
-        }
-        
         if (!this.tieneSolucion[0]) {
             while (!this.literalesSolos.empty()) {
                 int lit = ((Integer) this.literalesSolos.pop()).intValue();
@@ -785,6 +796,10 @@ public class Main {
                     }
                 }
             }
+            if (this.dosCNF.isEmpty()) {
+                this.tieneSolucion[0] = true;
+                this.tieneSolucion[1] = true;
+            }
         }
     }
 
@@ -796,41 +811,50 @@ public class Main {
      */
     public void construir2CNF() {
 
-        Iterator iterador = this.clausulas.iterator();
-        while (iterador.hasNext()) {
-            int[] clausula = (int[])iterador.next();
+        if (!this.tieneSolucion[0]) {
+            Iterator iterador = this.clausulas.iterator();
+            while (iterador.hasNext()) {
+                int[] clausula = (int[]) iterador.next();
 
-            int[][] disjunciones = Main.distributiva(clausula);
+                int[][] disjunciones = Main.distributiva(clausula);
 
-            // Se agrega la lista de disjunciones para formar la fórmula 2CNF:
+                // Se agrega la lista de disjunciones para formar la fórmula 2CNF:
 
-            int[] disj1 = new int[2];
-            disj1[0] = disjunciones[0][0];
-            disj1[1] = disjunciones[1][0];
+                int[] disj1 = new int[2];
+                disj1[0] = disjunciones[0][0];
+                disj1[1] = disjunciones[1][0];
 
-            int[] disj2 = new int[2];
-            disj2[0] = disjunciones[0][1];
-            disj2[1] = disjunciones[1][1];
+                int[] disj2 = new int[2];
+                disj2[0] = disjunciones[0][1];
+                disj2[1] = disjunciones[1][1];
 
-            int[] disj3 = new int[2];
-            disj3[0] = disjunciones[0][2];
-            disj3[1] = disjunciones[1][2];
+                int[] disj3 = new int[2];
+                disj3[0] = disjunciones[0][2];
+                disj3[1] = disjunciones[1][2];
 
-            int[] disj4 = new int[2];
-            disj4[0] = disjunciones[0][3];
-            disj4[1] = disjunciones[1][3];
+                int[] disj4 = new int[2];
+                disj4[0] = disjunciones[0][3];
+                disj4[1] = disjunciones[1][3];
 
-            this.dosCNF.add(disj1);
-            this.dosCNF.add(disj2);
-            this.dosCNF.add(disj3);
-            this.dosCNF.add(disj4);
-        }
+                if (!this.dosCNF.contains(disj1) &&
+                    !this.dosCNF.contains(Main.simetrico(disj1))) {
+                    this.dosCNF.add(disj1);
+                }
+                if (!this.dosCNF.contains(disj2) &&
+                    !this.dosCNF.contains(Main.simetrico(disj2))) {
+                    this.dosCNF.add(disj2);
+                }
+                if (!this.dosCNF.contains(disj3) &&
+                    !this.dosCNF.contains(Main.simetrico(disj3))) {
+                    this.dosCNF.add(disj3);
+                }
+                if (!this.dosCNF.contains(disj4) &&
+                    !this.dosCNF.contains(Main.simetrico(disj4))) {
+                    this.dosCNF.add(disj4);
+                }
+            }
 
-        this.simplificar2CNF();
-
-        if (!this.tieneSolucion[0] && this.dosCNF.isEmpty()) {
-            this.tieneSolucion[0] = true;
-            this.tieneSolucion[1] = true;
+            this.simplificar2CNF();
         }
     }
 
@@ -890,14 +914,6 @@ public class Main {
         if (!this.tieneSolucion[0]) {
             Tarjan tarjan = new Tarjan(this.digrafo);
             this.compsFuertConexas = tarjan.ejecutar();
-
-            System.out.println("Componentes Fuertemente Conexas:\n");
-            int[][] claus = new int[this.compsFuertConexas.size()][];
-            Iterator auxIter = this.compsFuertConexas.iterator();
-            for (int i = 0; i < claus.length; i++) {
-                List<Integer> lis = (List<Integer>)auxIter.next();
-                System.out.println("Componente "+i+" :\n" + lis.toString());
-            }
 
             if (this.compsFuertConexas.size() == 1) {
                 this.tieneSolucion[0] = true;
@@ -986,9 +1002,6 @@ public class Main {
             vialidad.construirClausulas();
             vialidad.construir2CNF();
             vialidad.construirGrafoDeImplicaciones();
-            if (!vialidad.tieneSolucion[0]) {
-                System.out.println(vialidad.digrafo);
-            }
             vialidad.calcularComponentesFuertementeConexas();
             
 
