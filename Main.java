@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Iterator;
 
-
-
 /**
  * Clase Principal encargada de resolver el problema de vialidad eficiente
  * planteado en el proyecto 4 de la cátedra del Laboratorio de Algoritmos y
@@ -108,7 +106,6 @@ import java.util.Iterator;
  *  !  : negación lógica
  *
  * @author Victor De Ponte, 05-38087
- * @author Karina Valera, 06-40414
  */
 public class Main {
 
@@ -139,7 +136,7 @@ public class Main {
     private int                 nInstancias;
     
     /**
-     * Numero de casos que se han estraido del archivo de entrada
+     * Numero de casos que se han extraido del archivo de entrada
      */
     private int                 nCasosProbados;
 
@@ -176,10 +173,10 @@ public class Main {
     private List<int[]>         clausulas;
 
     /**
-     * Lista que almacena los literales "solitarios", en los casos en los que se
-     * viaje en la misma calle o avenida.
+     * Lista que almacena los literales "solitarios" o cláusulas unitarias que
+     * representan los casos en los que se viaja en la misma calle o avenida.
      */
-    private Stack<Integer>       literalesSolos;
+    private Stack<Integer>      literalesSolos;
 
     /**
      * Cláusulas que modelan el problema en la forma 2CNF.
@@ -192,9 +189,7 @@ public class Main {
     private DiGraph             digrafo;
 
     /**
-     * Número de nodos que tendrá el grafo de implicaciones, excluyendo nodos
-     * dummy para el trato de los casos en los que se viaja sobre la misma calle
-     * o la misma avenida.
+     * Número de nodos que tendrá el grafo de implicaciones
      */
     private int                 nNodos;
 
@@ -206,7 +201,7 @@ public class Main {
     /**
      * Dice si el caso de prueba tratado tiene solucion o no. La primera posi-
      * cion indica si se ha confirmado una desicion sobre el resultado del pro-
-     * blema o no, y la segunda posicion indica la desicion en si.
+     * blema o no, y la segunda posicion indica la desicion propiamente dicha.
      */
     private boolean[]           tieneSolucion;
 
@@ -215,9 +210,13 @@ public class Main {
     /**
      * Constructor de la Clase Main. Se encarga de inicializar todos los valores
      * al inicio del programa.
-     * @obj inFile Archivo de entrada
-     * @obj outFile Archivo de Salida
-     * @throws IOException En caso de que ocurra un error al leer o escribir
+     * pre: true
+     * post: Se genera una instancia de la clase Main preparada para resolver
+     * una nueva instancia del problema.
+     * @param inFile Archivo de entrada
+     * @param outFile Archivo de Salida
+     * @throws IOException En caso de que ocurra un error al leer o escribir, o
+     * un error de formato
      */
     public Main (String inFile, String outFile) throws IOException {
         this.inputFile = inFile;
@@ -257,9 +256,11 @@ public class Main {
     // MÉTODOS ESTÁTICOS:
 
     /**
-     * Distribuye las clausulas conseguidas en la primera fase. Requiere que las
-     * clausulas tengan tamaño 4.
-     * @obj clausula La cláusula a distribuir
+     * Distribuye las clausulas conseguidas en la primera fase.
+     * pre: clausula.length == 4;
+     * post: Se genera un arreglo de tamaño 8 que representa la clausula
+     * recibida de manera distribuida (4 disjunciones, 8 literales).
+     * @param clausula La cláusula a distribuir
      * @return Arreglo que representa la distribucion de los literales de la
      * clausula
      */
@@ -319,7 +320,11 @@ public class Main {
     
     /**
      * Indica si queda algun caso por probar
-     * @return
+     * pre: true
+     * post: se devuelve el resultado de evaluar la expresion:
+     * (this.nCasosProbados &lt; this.nInstancias)
+     * @return el resultado de evaluar la expresion:
+     * (this.nCasosProbados &lt; this.nInstancias)
      */
     public boolean hasNext() {
         return (this.nCasosProbados < this.nInstancias);
@@ -328,13 +333,14 @@ public class Main {
     /**
      * Construye la clausula en caso de que el viaje sea hacia la derecha del
      * mapa
-     * pre:  true;
-     * post: Se devuelve la clausula en el caso de ir hacia la izq en el
-     * mapa
-     * @obj ca1 calle del punto 1
-     * @obj av1 avenida del punto 1
-     * @obj ca2 calle del punto 2
-     * @obj av2 avenida del punto 2
+     * pre: ca1, ca2, av3 y av4 deben ser enteros dentro del rango de calles y
+     * avenidas de esta instancia del problema;
+     * post: Se devuelve la clausula que representa el caso de ir hacia la
+     * derecha en el mapa
+     * @param ca1 calle del punto 1
+     * @param av1 avenida del punto 1
+     * @param ca2 calle del punto 2
+     * @param av2 avenida del punto 2
      * @return Clausula  en forma de arreglo de enteros generada para este caso
      */
     private int[] haciaLaDerecha(int ca1, int av1, int ca2, int av2) {
@@ -373,13 +379,14 @@ public class Main {
     /**
      * Construye la clausula en caso de que el viaje sea hacia la izquierda del
      * mapa.
-     * pre:  true;
-     * post: Se devuelve la clausula en el caso de ir hacia la derecha en el
-     * mapa
-     * @obj ca1 calle del punto 1
-     * @obj av1 avenida del punto 1
-     * @obj ca2 calle del punto 2
-     * @obj av2 avenida del punto 2
+     * pre: ca1, ca2, av3 y av4 deben ser enteros dentro del rango de calles y
+     * avenidas de esta instancia del problema;
+     * post: Se devuelve la clausula que representa el caso de ir hacia la
+     * izquierda en el mapa
+     * @param ca1 calle del punto 1
+     * @param av1 avenida del punto 1
+     * @param ca2 calle del punto 2
+     * @param av2 avenida del punto 2
      * @return Clausula  en forma de arreglo de enteros generada para este caso
      */
     private int[] haciaLaIzquierda(int ca1, int av1, int ca2, int av2) {
@@ -417,13 +424,14 @@ public class Main {
 
     /**
      * Construye la clausula en caso de que el viaje sea en la misma avenida
-     * pre:  true;
-     * post: Se devuelve la clausula en el caso de viajar en la misma avenida en
-     * el mapa
-     * @obj ca1 calle del punto 1
-     * @obj av1 avenida del punto 1
-     * @obj ca2 calle del punto 2
-     * @obj av2 avenida del punto 2
+     * pre: ca1, ca2, av3 y av4 deben ser enteros dentro del rango de calles y
+     * avenidas de esta instancia del problema;
+     * post: Se devuelve la clausula que representa el caso de viajar en la
+     * misma avenida
+     * @param ca1 calle del punto 1
+     * @param av1 avenida del punto 1
+     * @param ca2 calle del punto 2
+     * @param av2 avenida del punto 2
      * @return Clausula  en forma de arreglo de enteros generada para este caso
      */
     private int[] mismaAvenida(int ca1, int av1, int ca2, int av2) {
@@ -464,11 +472,12 @@ public class Main {
     }
 
     /**
-     * Llama a las funciones que consruiran la clausula
+     * Llama a las funciones que consruiran la clausula representada en pair
      * pre: pair.length == 4
-     * post: Se devuelve un arreglo de enteros que representa la clausula corres
-     * pondiente al viaje entre los puntos representados en pair.
-     * @obj pair Arreglo que representa el par de puntos entre los que se viaja
+     * post: Se devuelve un arreglo de enteros que representa la clausula co-
+     * rrespondiente al viaje entre los puntos representados en pair.
+     * @param pair Arreglo que representa el par de puntos entre los que se
+     * viaja.
      * @return un arreglo que representa la clausula del viaje.
      */
     private int[] construirClausula(int[] pair) {
@@ -583,7 +592,8 @@ public class Main {
     /**
      * Mapea los numeros de calle a su correspondiente numero en la representa-
      * cion.
-     * pre: true;
+     * pre: nCalle debe estar dentro del rango de numero de calles de esta
+     * instancia del problema;
      * post: se retorna la representacion de nCalle
      * @param nCalle numero de calle a mapear
      * @return la representacion de nCalle
@@ -597,7 +607,8 @@ public class Main {
     /**
      * Mapea los numeros de avenida a su correspondiente numero en la represen-
      * tacion.
-     * pre: true;
+     * pre: nAvenida debe estar dentro del rango de numero de avenidas de esta
+     * instancia del problema;
      * post: se retorna la representacion de nAvenida
      * @param nAvenida numero de avenida a mapear
      * @return la representacion de nAvenida
@@ -609,10 +620,13 @@ public class Main {
         return avenida;
     }
 
+    // REVISAR LA DOCUMENTACION A PARTIR DE AQUI.
     /**
-     * Se inicializan los campos de esta clase para este caso de prueba
+     * Se inicializan los campos de esta clase que dan los datos iniciales de
+     * este caso de prueba.
      * pre: linea contiene la linea recien parseada y token sus elementos
-     * post: se inicializan los campos de la clase con estos valores
+     * post: se inicializan los campos de la clase con estos valores. Estos son:
+     * this.a, this.c, this.p, this.offset, y this.nNodos
      *
      * @param linea linea parseada
      * @param tokens arreglo que contiene los elementos de linea
@@ -646,10 +660,12 @@ public class Main {
     /**
      * Almacena los pares de puntos entre los que se viajara
      * pre: linea contiene la linea recien parseada y token sus elementos
-     * post: se inicializan los campos de la clase con estos valores
+     * post: this.viajes contendrá los valores obtenidos de parsear la parte del
+     * archivo de entrada que corresponde a los pares entre los que se viaja en
+     * esta instancia del problema.
      * @param linea linea parseada
      * @param tokens arreglo que contiene los elementos de linea
-     * @throws IOException en caso de ocurrir un error de formato
+     * @throws IOException en caso de ocurrir un error de I/O o de formato
      */
     private void almacenamientoDeViajes(String linea, String[] tokens)
                                                             throws IOException
@@ -687,8 +703,9 @@ public class Main {
 
     /**
      * Carga el siguiente caso de prueba a analizar en los campos de esta clase
-     * pre true;
-     * post: se carga el siguiente caso
+     * pre: se debe haber creado una nueva instancia de la clase Main;
+     * post: se inicializan todos los campos de la clase que no requieren del
+     * procesamiento de datos.
      * @throws IOException en caso de que haya un error de lectura o de formato
      * en el archivo de entrada
      */
@@ -727,10 +744,12 @@ public class Main {
     }
 
     /**
-     * Construye las clausulas de este caso de prueba
-     * pre: true
+     * Construye las clausulas correspondientes al viaje entre cada punto para
+     * esta instancia del problema.
+     * pre: Se deben haber inicalizado todos los campos que no requieren
+     * procesamiento de datos.
      * post: las clausulas que modelan esta innstancia del problema estan carga-
-     * das en los campos de la clase
+     * das en this.clausulas
      */
     public void construirClausulas() {
         Iterator iterador = this.viajes.iterator();
@@ -747,9 +766,9 @@ public class Main {
 
     /**
      * Simplifica el modelo en forma 2CNF para eliminar las clausulas unitarias
-     * pre: true
-     * post: los literales unitarios se han eliminado, junto con las clausulas
-     * que dependen de el adecuadamanete
+     * pre: Se deben haber construido las clausulas que modelan los viajes
+     * post: this.literalesSolos esta vacia, y las clausulas que dependian de su
+     * anterior contenido se han procesado adecuadamente
      */
     private void simplificar2CNF() {
 
@@ -779,10 +798,11 @@ public class Main {
      * Procesa el literal pasado. Decide que hacer en funcion de la comparación
      * del literal con cada parte de la disjuncion pasada.
      * pre: i debe estar entre 0 y disjs.length y lit debe estar entre 0 y
-     * this.nNodos
-     * post: se analizan todas las disjunciones y si en alguna esta lit, esta se
-     * elimina; y si esta noLit, se elimina y el literal que lo acompaña se
-     * agrega a la pila de literales solos.
+     * this.nNodos; se deben haber creado las clausulas de forma 2CNF y disjs
+     * debe contener dichas cláusulas.
+     * post: se analizan todas las disjunciones y, si en alguna de ellas está
+     * lit, ésta se elimina; y si está noLit, se elimina y el literal que lo
+     * acompaña se agrega a la pila de literales solos.
      *
      * @param i Numero de disjunción que se está analizando
      * @param lit Representación del literal a comparar
@@ -806,8 +826,6 @@ public class Main {
                 this.tieneSolucion[0] = true;
                 this.tieneSolucion[1] = false;
             }
-        } else if (pe == lit) {
-            this.dosCNF.remove(disjs[i]);
         }
 
         if (q == noLit) {
@@ -820,16 +838,13 @@ public class Main {
                 this.tieneSolucion[0] = true;
                 this.tieneSolucion[1] = false;
             }
-        } else if (q == lit) {
-            this.dosCNF.remove(disjs[i]);
         }
     }
 
     /**
      * Transforma las clausulas calculadas a la forma 2CNF
-     * pre: true
-     * post: se cargan las clausulas en 2CNF en el campo correspondiente de la
-     * clase
+     * pre: Se debe haber creado las clausulas que modelan los viajes.
+     * post: se cargan las clausulas en la forma 2CNF en this.dosCNF
      */
     public void construir2CNF() {
 
@@ -840,7 +855,9 @@ public class Main {
 
                 int[][] disjunciones = Main.distributiva(clausula);
 
-                // Se agrega la lista de disjunciones para formar la fórmula 2CNF:
+                /* Se agrega la lista de disjunciones para formar la fórmula
+                 * de la forma 2CNF:
+                 */
 
                 int[] disj1 = new int[2];
                 disj1[0] = disjunciones[0][0];
@@ -881,11 +898,12 @@ public class Main {
     }
 
     /**
-     * Construye el grafo de implicaciones que representa esta instancia del
+     * Construye el grafo de implicaciones que representa ésta instancia del
      * problema
-     * pre: true
+     * pre: Debe de haberse construido y simplificado las clausulas de la forma
+     * 2CNF
      * post: en caso de que no se haya conseguido ya la solucion, se construye
-     * un grafo de implicaciones que modela el problema.
+     * un grafo de implicaciones que modela esta instancia del problema.
      */
     public void construirGrafoDeImplicaciones() {
 
@@ -927,9 +945,9 @@ public class Main {
 
     /**
      * calcula las componentes fuertemente conexas usando el algoritmo de Tarjan
-     * pre: true
-     * post: Se calculan las componentes fuertemente conexas del digrafo de esta
-     * instancia del problema
+     * pre: this.digrafo != null;
+     * post: Se calculan las componentes fuertemente conexas del digrafo que
+     * modela esta instancia del problema y se cargan en this.compsFuertConexas.
      */
     public void calcularComponentesFuertementeConexas() {
 
@@ -953,7 +971,8 @@ public class Main {
      * Analiza una componente para ver si consigue literales que den contradic-
      * cion.
      * pre: componente debe contener una componente F.C. del grafo del problema
-     * post: se dice si hay contrdiccion en esta componente
+     * post: se retorna true si hay contrdiccion en esta componente, false en
+     * caso contrario.
      * @param componente C.F.C. a analizar
      * @return true si no hay contradiccion en esta componente, false en caso
      * contrario.
@@ -986,18 +1005,25 @@ public class Main {
     /**
      * Escribe el resultado de los calculos en el archivo de salida
      * pre: true;
-     * post: Se calcula el resultado y se imprime en el archivo de salida.
+     * post: En caso de que no se haya encontrado antes la solución, se analizan
+     * las componentes fuertemente conexas para determinar la solución, y se
+     * imprime la misma en el archivo de salida.
      */
     public void decision() {
         String desicion = "";
-        
 
         if (!this.tieneSolucion[0]) {
+
             Iterator iter = this.compsFuertConexas.iterator();
-            while (iter.hasNext() && !this.tieneSolucion[1]) {
-                this.tieneSolucion[1] = analizarComponente
-                                                (((List<Integer>) iter.next()));
+            boolean existeVialidad = true;
+            
+            while (iter.hasNext() && existeVialidad) {
+                List<Integer> aux = (List<Integer>)iter.next();
+                existeVialidad = analizarComponente(aux);
             }
+
+            this.tieneSolucion[0] = true;
+            this.tieneSolucion[1] = existeVialidad;
         }
 
         desicion = ( this.tieneSolucion[1] ? "Si." : "No.");
@@ -1007,9 +1033,17 @@ public class Main {
 
     /**
      * Programa trincipal. Controla el flujo del resto de los métodos.
-     * @param args the command line arguments
+     * pre: Se debe llamar con la sintaxis indicada, y el formato del archivo de
+     * entrada debe estar acorde con el formato del enunciado del proyecto.
+     * post: Se imprime en el archivo de salida el resultado de cada una de las
+     * instancias del problema propuestas en el archivo de salida.
+     *
+     * @param args los argumentos pasados por linea de comandos. la sintaxis del
+     * programa es: java Main archivo_entrada.input archivo_salida.output
+     * @throws IOException En caso de que se produzca un error del tipo I/O, o
+     * de formato en el archivo de entrada.
      */
-        public static void main(String[] args) throws IOException{
+    public static void main(String[] args) throws IOException{
         Main vialidad = null;
         if (args.length == 2) {
             vialidad = new Main(args[0], args[1]);
@@ -1025,8 +1059,6 @@ public class Main {
             vialidad.construir2CNF();
             vialidad.construirGrafoDeImplicaciones();
             vialidad.calcularComponentesFuertementeConexas();
-            
-
             vialidad.decision();
         }
 

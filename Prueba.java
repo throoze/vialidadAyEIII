@@ -1,4 +1,5 @@
 
+import java.io.IOException;
 import java.util.Iterator;
 
 /*
@@ -14,13 +15,19 @@ public class Prueba {
 
 
 
-    public static void main (String[] args) {
-        DiGraph dig = new DiGraphList(4);
-        dig.addArc(0, 1);
-        dig.addArc(1, 0);
-        dig.addArc(2, 3);
-        dig.addArc(3, 2);
-        dig.addArc(1, 2);
+    public static void main (String[] args) throws IOException{
+        DiGraph dig = null;
+
+        if (args.length == 1) {
+            dig = new DiGraphList(args[0]);
+        } else {
+            dig = new DiGraphList(4);
+            dig.addArc(0, 1);
+            dig.addArc(1, 0);
+            dig.addArc(2, 3);
+            dig.addArc(3, 2);
+            dig.addArc(1, 2);
+        }
         List<List<Integer>> compsFuertConexas = new Lista();
 
         Tarjan tar = new Tarjan(dig);

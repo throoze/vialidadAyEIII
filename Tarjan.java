@@ -9,16 +9,37 @@ import java.util.Iterator;
  */
 public class Tarjan {
 
+
+    // "Variables globales" necesarias para la ejecución del algoritmo de Tarjan
+
+    /**
+     * Indica el indice de cada nodo
+     */
     public int[]                indice;
+
+    /**
+     * Indica el lowLink de cada nodo
+     */
     public int[]                lowLink;
     public Stack<Integer>       stack;
     public List<Integer>        compFuertCon;
     public DiGraph              digrafo;
     public List<List<Integer>>  compsFuertCon;
     public int                  index;
+
+    /**
+     * dice si un nodo esta empilado o no, para una consulta rápida y eficiente
+     */
     public boolean[]            empilado;
 
+    // CONSTRUCTOR:
 
+    /**
+     * Crea una nueva instancia de la clase Tarjan
+     * pre: true;
+     * post: Se inicializan todos los campos de la clase
+     * @param digrafo
+     */
     public Tarjan(DiGraph digrafo) {
         this.digrafo = digrafo;
         this.empilado = new boolean[digrafo.numNodes];
@@ -38,6 +59,16 @@ public class Tarjan {
         this.compFuertCon = new Lista();
     }
 
+    // MÉTODOS:
+
+    /**
+     * Hace la llamada recursiva al algoritmo de tarjan para cada nodo no
+     * visitado
+     * pre: true
+     * post: Se llama recursivamente a tarjan para cada nodo y se devuelve una
+     * lista de las componentes fuertemente conexas de this.digrafo
+     * @return una Lista de las componentes fuertemente conexas de this.digrafo
+     */
     public List<List<Integer>> ejecutar() {
         for (int v = 0; v < this.digrafo.numNodes; v++) {
             if (this.indice[v] == -1) {
@@ -47,6 +78,14 @@ public class Tarjan {
         return this.compsFuertCon;
     }
 
+    /**
+     * Va almacenando cada una de las componentes fuertemente conexas de manera
+     * recursiva.
+     * pre: v debe pretenecer a this.digrafo
+     * post: recursivamente se van almacenando las componentes fuertemente
+     * conexas
+     * @param v Nodo para el cual se va a calcular la recursion
+     */
     private void tarjan(int v) {
         this.indice[v] = this.index;
         this.lowLink[v] = this.index;
@@ -71,6 +110,7 @@ public class Tarjan {
             }
         }
 
+
         if (this.lowLink[v] == this.indice[v]) {
             Integer w = null;
             this.compFuertCon = new Lista();
@@ -84,9 +124,13 @@ public class Tarjan {
     }
 
     /**
-     *
-     * @param lista
-     * @return
+     * Función auxiliar que genera un arreglo de int a partir de una lista de
+     * Integer.
+     * pre: true
+     * post: Se devuelve un arreglo de int, con los valores enteros contenidos
+     * en la lista {@code lista}
+     * @param lista Lista de Integer a transformar
+     * @return arreglo de int con los mismos elementos de lista.
      */
     public static int[] generarArrEnteros(List<Integer> lista) {
         int[] arr = new int[lista.size()];
